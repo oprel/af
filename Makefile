@@ -33,7 +33,7 @@ endif
 #   jp   N64 Japan (default)
 VERSION ?= jp
 # If COMPARE is 1, check the output md5sum after building
-COMPARE ?= 1
+COMPARE ?= 0
 # If NON_MATCHING is 1, define the NON_MATCHING C flag when building
 NON_MATCHING ?= 0
 # if WERROR is 1, pass -Werror to CC_CHECK, so warnings would be treated as errors

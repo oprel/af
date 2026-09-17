@@ -219,7 +219,7 @@ void mChoice_Get_StringDataAddressAndSize(s32 idx, u32** addr, u32* size) {
             sizeCalc = vram[2] - vrom;
         }
 
-        if (sizeCalc < 11) {
+        if (sizeCalc <= Choice_CHOICE_STRING_LEN) {
             *addr = (u32*)((uintptr_t)vrom + (uintptr_t)&D_D05000);
             *size = sizeCalc;
         } else {

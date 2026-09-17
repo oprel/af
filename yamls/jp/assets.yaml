@@ -15971,8 +15971,6 @@
   - name: softsprite_matrix_static
     type: bin
     start: 0x1913000
-    # vram:
-    compress: True
+    compress: False
     align: 0x1000
-
-  - [0x1913040]
+  - [0x1aff000]

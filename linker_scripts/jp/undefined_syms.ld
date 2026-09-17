@@ -5663,3 +5663,7 @@ D_801530C0_jp = 0x801530C0; //
 D_80153CC0_jp = 0x80153CC0; //
 gGfxPools = 0x801540C0; //
 D_801948E0_jp = 0x801948E0; //
+
+// Translation
+
+english_dialogue = 0x1914000;
