@@ -138,6 +138,9 @@ SPLAT_YAML      := $(TARGET)-$(VERSION).yaml
 
 PIGMENT         := tools/pigment64/pigment64
 
+TEXT_INJECTOR	:= $(PYTHON) translation_injector.py
+FONT_INJECTOR	:= $(PYTHON) font_injector.py
+
 
 IINC := -Iinclude -Isrc -Iassets/$(VERSION) -I. -I$(BUILD_DIR)
 IINC += -Ilib/ultralib/include -Ilib/ultralib/include/PR -Ilib/ultralib/include/compiler/ido
@@ -291,6 +294,10 @@ venv:
 setup:
 	$(MAKE) -C tools WARNINGS_CHECK=$(WARNINGS_CHECK)
 	$(PYTHON) tools/decompress_baserom.py $(VERSION)
+
+inject:
+	$(TEXT_INJECTOR) link_sheet.csv baseroms/ac/ .
+	$(FONT_INJECTOR) .
 
 extract:
 	$(RM) -r asm/$(VERSION) assets/$(VERSION)

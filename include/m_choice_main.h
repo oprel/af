@@ -9,6 +9,8 @@ struct Actor;
 
 #define Choice_CHOICE_STRING_LEN 10
 
+#define LONG_CHOICES 16 //temporary workaround to get longer choices to work with incomplete decomp
+
 typedef enum Choice_CHOICE {
     Choice_CHOICE0,
     Choice_CHOICE1,
@@ -84,6 +86,8 @@ typedef struct Choice {
 
     /* 0xB8 */ u8 noBFlag;      // can't press B to select last option
     /* 0xB9 */ u8 noCloseFlag;  // pressing B won't auto-cancel the choice selection?
+    /* 0xBA */ u8 longStringSlot; //workaround for long choices
+    /* 0xBB */ u8 longStringPad; //workaround for long choices
 } Choice; // size = 0xBC
 
 

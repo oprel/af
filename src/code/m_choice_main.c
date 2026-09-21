@@ -132,15 +132,25 @@ s32 mChoice_Get_MaxStringDotWidth(Choice* choice) {
     s32 i;
     s32 choiceNum = choice->data.choiceNum;
     s32 maxWidth = 0;
+#ifdef LONG_CHOICES
+    char* str = (char*)choice - 0x7E;
+#endif
 
     for (i = 0; i < choiceNum; i++) {
+#ifdef LONG_CHOICES
+        s32 len = mMsg_Get_Length_String(str, LONG_CHOICES);
+#else 
         char* str = choice->data.strings[i];
         s32 len = choice->data.stringLens[i];
+#endif
         s32 width = mFont_GetStringWidth(str, len, 0);
 
         if (width > maxWidth) {
             maxWidth = width;
         }
+#ifdef LONG_CHOICES
+        str += LONG_CHOICES;
+#endif
     }
 
     return maxWidth;
@@ -218,8 +228,11 @@ void mChoice_Get_StringDataAddressAndSize(s32 idx, u32** addr, u32* size) {
             vrom = vram[1];
             sizeCalc = vram[2] - vrom;
         }
-
+#ifdef LONG_CHOICES
+        if (sizeCalc <= LONG_CHOICES) {
+#else
         if (sizeCalc <= Choice_CHOICE_STRING_LEN) {
+#endif
             *addr = (u32*)((uintptr_t)vrom + (uintptr_t)&D_D05000);
             *size = sizeCalc;
         } else {
@@ -525,6 +538,40 @@ void mChoice_Change_ControlCode(char* data, s32 maxSize, Actor* actor) {
     };
 }
 
+#ifdef LONG_CHOICES
+void mChoice_Load_ChoseStringFromRom(s32 choicePtr, char* str, s32 idx, Actor* actor) {
+    Choice* choice = (Choice*)choicePtr;
+    uintptr_t addr = (uintptr_t)str;
+    s32 slot = ((addr >> 1) & 3) ^ ((addr >> 20) & 2);
+    char* scratch;
+
+    scratch = (char*)choice - 0x7E + slot * LONG_CHOICES;
+
+    if (idx >= 0 && idx < 460) {
+        u32* dataAddr;
+        u32 size;
+
+        mChoice_Get_StringDataAddressAndSize(idx, &dataAddr, &size);
+        if (dataAddr != NULL && size != 0) {
+            char vram[29];
+            s32 alignedSize = ((u32)dataAddr & ~7);
+            s32 ofs = (u32)dataAddr - alignedSize;
+            s32 len = size;
+
+            if (len > LONG_CHOICES) len = LONG_CHOICES;
+
+            DmaMgr_RequestSyncDebug(vram, alignedSize, ALIGN8(ofs + size), "../m_choice_main.c", 1168);
+            mem_copy(scratch, &vram[ofs], len);
+            mem_clear((u8*)scratch + len, LONG_CHOICES - len, ' ');
+            mChoice_Change_ControlCode(scratch, LONG_CHOICES, actor);
+        } else {
+            mem_clear((u8*)scratch, LONG_CHOICES, ' ');
+        }
+
+        mem_copy(str, scratch, Choice_CHOICE_STRING_LEN);
+    }
+}
+#else
 void mChoice_Load_ChoseStringFromRom(UNUSED s32 unused, char* str, s32 idx, Actor* actor) {
     if (idx >= 0 && idx < 460) {
         u32* addr;
@@ -569,6 +616,8 @@ void mChoice_Load_ChoseStringFromRom(UNUSED s32 unused, char* str, s32 idx, Acto
         }
     }
 }
+#endif
+
 void mChoice_no_b_set(Choice* choice) {
     choice->noBFlag = TRUE;
 }
@@ -987,6 +1036,10 @@ void mChoice_DrawFont(Choice* choice, Game* game, s32 type) {
     f32 x;
     f32 y;
     s32 selected_idx;
+#ifdef LONG_CHOICES
+    volatile s32 dummy;
+    char* str = (char*)choice - 0x7E;
+#endif
 
     x = choice->textX;
     y = choice->textY;
@@ -1008,13 +1061,22 @@ void mChoice_DrawFont(Choice* choice, Game* game, s32 type) {
             g = choice->textColor.g;
             b = choice->textColor.b;
         }
-
+#ifdef LONG_CHOICES
+        mFont_SetLineStrings_AndSpace(game, str, mMsg_Get_Length_String(str, LONG_CHOICES), x, y, r, g, b, 255,
+                                      FALSE, FALSE, 0, 1.0f, 1.0f, type);
+        y += 16.0f;
+        str += LONG_CHOICES;
+    }
+    dummy = choice_num + 1;
+}
+#else
         mFont_SetLineStrings_AndSpace(game, choice->data.strings[i], choice->data.stringLens[i], x, y, r, g, b, 255,
                                       FALSE, FALSE, 0, 1.0f, 1.0f, type);
 
         y += 16.0f;
     }
 }
+#endif
 
 void mChoice_Draw(Choice* choice, Game* game, s32 mode) {
     if (choice->isWindowVisible) {

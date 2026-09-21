@@ -22,6 +22,8 @@ ctx.c.m2c
 *.v64
 *.plf
 *.sym
+*.arc
+*.szs
 .venv
 
 .vscode/*
