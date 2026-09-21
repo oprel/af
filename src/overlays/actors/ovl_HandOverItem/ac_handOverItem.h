@@ -11,8 +11,8 @@ struct HandOverItem;
 typedef void (*HandOverItemActionFunc)(struct HandOverItem*, struct Game_Play*);
 
 typedef struct HandOverItem {
-    /* 0x000 */ Actor actor;
-    /* 0x174 */ UNK_TYPE1 unk_174[0x84];
+    UNK_TYPE1 unk_00[0x10];
+    Actor* masterActor;
 } HandOverItem; // size = 0x1F8
 
 #endif

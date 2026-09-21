@@ -74,6 +74,32 @@ typedef struct FamicomEmuCommonData {
     /* 0x24 */ s16 unk24;
 } FamicomEmuCommonData; // size >= 0x26
 
+// todo: move this to its own m_config.h file
+enum {
+  Config_SOUND_MODE_STEREO,
+  Config_SOUND_MODE_MONO,
+  Config_SOUND_MODE_HEADPHONES,
+
+  Config_SOUND_MODE_NUM
+};
+
+enum {
+  Config_VOICE_MODE_ANIMALESE,
+  Config_VOICE_MODE_CLICK,
+  Config_VOICE_MODE_SILENT,
+
+  Config_VOICE_MODE_NUM
+};
+
+typedef struct config_s {
+  /* 0x00 */ u8 soundMode; /* mono, stereo, ... */
+  /* 0x01 */ u8 voiceMode; /* silent, babblese, animalese */
+  /* 0x02 */ u8 unused1;
+  /* 0x03 */ u8 unused2; 
+
+} Config_c;
+//end
+
 typedef struct Save {
     /* 0x00000 */ u8 unk_00000[0x14];
     /* 0x00014 */ s32 sceneNo;
@@ -97,7 +123,7 @@ typedef struct Save {
     /* 0x0EF64 */ UNK_TYPE1 unk_0EF64[0x4B8];
     /* 0x0F41C */ SnowmanData snowmanData[SNOWMAN_SAVE_COUNT];
     /* 0x0F428 */ u64 melody;
-    /* 0x0F430 */ UNK_TYPE1 unk_F430[0x4];
+    /* 0x0F430 */ Config_c config;
     /* 0x0F434 */ lbRTC_ymd_t renewTime;
     /* 0x0F438 */ u8 stationType;
     /* 0x0F439 */ u8 saveWeather;

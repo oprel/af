@@ -1,4 +1,5 @@
 #include "ac_quest_manager.h"
+#include "m_choice_main.h"
 #include "m_lib.h"
 #include "m_actor_dlftbls.h"
 #include "m_object.h"
@@ -61,7 +62,38 @@ ActorProfile Quest_Manager_Profile = {
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Quest_Manager/ac_quest_manager/func_8095573C_jp.s")
 
-#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Quest_Manager/ac_quest_manager/func_80955814_jp.s")
+//#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Quest_Manager/ac_quest_manager/func_80955814_jp.s")
+//*
+s32 func_80955814_jp(Quest_Manager* manager) {
+    QMgr_Choice* choice = &manager->choice;
+    char str[Choice_CHOICE_MAX][Choice_CHOICE_STRING_LEN];
+    char* str_p[Choice_CHOICE_MAX];
+    s32 i;
+ 
+    for (i = 0; i < Choice_CHOICE_MAX; i++) {
+        str_p[i] = NULL;
+    }
+ 
+    for (i = 0; i < choice->choice_num; i++) {
+        if (i >= Choice_CHOICE_MAX) {
+            break;
+        }
+ 
+        mChoice_Load_ChoseStringFromRom((s32)mChoice_Get_base_window_p(), str[i], choice->choice_ids[i], NULL);
+        str_p[i] = str[i];
+    }
+ 
+    mChoice_Set_choice_data(
+        mChoice_Get_base_window_p(),
+        str_p[0], Choice_CHOICE_STRING_LEN,
+        str_p[1], Choice_CHOICE_STRING_LEN,
+        str_p[2], Choice_CHOICE_STRING_LEN,
+        str_p[3], Choice_CHOICE_STRING_LEN
+    );
+ 
+    return TRUE;
+}
+    //*/
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Quest_Manager/ac_quest_manager/func_80955940_jp.s")
 

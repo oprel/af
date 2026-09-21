@@ -4,6 +4,7 @@
 #include "ultra64.h"
 #include "unk.h"
 #include "color.h"
+#include "overlays/actors/ovl_HandOverItem/ac_handOverItem.h"
 
 struct Actor;
 struct ActorOverlay;
@@ -269,7 +270,8 @@ typedef struct Clip {
     /* 0x078 */ struct WeatherClip* weatherClip;
     /* 0x07C */ Clip_unk_07C* unk_07C; 
     /* 0x080 */ MyRoomClip* myRoomClip;
-    /* 0x084 */ s8 unk_084[0x8];
+    /* 0x084 */ void* _084;
+    /* 0x088 */ HandOverItem* handOverItemClip;
     /* 0x08C */ struct StructureClip* structureClip; 
     /* 0x090 */ Clip_unk_090* unk_090;
     /* 0x094 */ struct ToolClip* toolClip;

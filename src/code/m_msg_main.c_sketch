@@ -1,0 +1,3134 @@
+#include "global.h"
+#include "m_msg_main.h"
+#include "m_choice_main.h"
+
+//source: https://decomp.me/scratch/LbucU
+
+
+Gfx con_kaiwa2_modelT[];
+Gfx mMsg_init_disp[];
+Gfx con_kaiwaname_modelT[];
+
+
+MessageWindow* mMsg_Get_base_window_p(void) {
+    return &mMsg_window;
+}
+
+s32 mMsg_Check_request_priority(MessageWindow* window, s32 priority) {
+    s32 windowPrio = window->requestedPriority;
+
+    return windowPrio < priority;
+}
+
+s32 mMsg_Change_request_main_index(MessageWindow* window, s32 mainIndex, s32 priority) {
+    if (mMsg_Check_request_priority(window, priority)) {
+        window->requestedMainIndex = mainIndex;
+        window->requestedPriority = priority;
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+s32 mMsg_Check_main_index(MessageWindow* window, s32 mainIndex) {
+    return window->mainIndex == mainIndex;
+}
+
+s32 mMsg_Check_main_wait(MessageWindow* window) {
+    return mMsg_Check_main_index(window, MESSAGE_MAIN_INDEX_WAIT);
+}
+
+int mMsg_Check_not_series_main_wait(MessageWindow* window) {
+    return !(mMsg_Check_main_index(window, MESSAGE_MAIN_INDEX_WAIT) ||
+             mMsg_Check_main_index(window, MESSAGE_MAIN_INDEX_APPEAR_WAIT) ||
+             mMsg_Check_main_index(window, MESSAGE_MAIN_INDEX_DISAPPEAR_WAIT));
+}
+
+s32 mMsg_Check_main_hide(MessageWindow* window) {
+    return mMsg_Check_main_index(window, MESSAGE_MAIN_INDEX_HIDE);
+}
+
+void mMsg_Set_client_actor_p(MessageWindow* window, Actor* clientActor, s32 showName) {
+    if (clientActor != NULL) {
+        f32 width;
+        f32 offsetX;
+        s32 pad;
+        char name[ANIMAL_NAME_LEN];
+        s32 len;
+
+        window->clientActor = clientActor;
+        window->showActorName = showName;
+
+        mNpc_GetNpcWorldName(name, (Npc*)clientActor);
+        len = mMsg_Get_Length_String(name, ANIMAL_NAME_LEN);
+        width = mFont_GetStringWidth(name, len, FALSE);
+        offsetX = ((12.0f * (f32)ANIMAL_NAME_LEN) - width) * 0.5f;
+
+        window->nameplateX = 61.0f + offsetX;
+        window->nameplateY = 64.0f;
+        window->clientNameLen = len;
+    } else {
+        window->clientActor = NULL;
+        window->showActorName = FALSE;
+    }
+}
+
+s32 mMsg_request_main_forceoff() {
+    return mMsg_Change_request_main_index(mMsg_Get_base_window_p(), MESSAGE_MAIN_INDEX_HIDE, 9);
+}
+
+s32 mMsg_request_main_appear(MessageWindow* window, Actor* clientActor, s32 showName, Color_RGBA8* windowColor,
+                             s32 msgNo, s32 prio) {
+    if (mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_APPEAR, prio)) {
+        MessageRequestAppearData* data = &window->requestData.appearData;
+
+        data->speakerActor = clientActor;
+        data->nameShown = showName;
+        data->windowColor = *windowColor;
+        data->msgNo = msgNo;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_request_main_disappear_wait(MessageWindow* window, s32 lastIndex, s32 prio) {
+    if (mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_DISAPPEAR_WAIT, prio)) {
+        MessageRequestDisappearWaitData* data = &window->requestData.disappearWaitData;
+
+        data->lastMainIndex = lastIndex;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_request_main_disappear_wait_sub(MessageWindow* window, s32 lastIndex) {
+    if (mChoice_check_main_index(mChoice_Get_base_window_p()) == MESSAGE_MAIN_INDEX_HIDE) {
+        return mMsg_request_main_disappear_wait(window, lastIndex, 5);
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_request_main_disappear_wait_type1(MessageWindow* window) {
+    return mMsg_request_main_disappear_wait_sub(window, window->mainIndex);
+}
+
+s32 mMsg_request_main_disappear_wait_type2(MessageWindow* window) {
+    return mMsg_request_main_disappear_wait_sub(window, MESSAGE_MAIN_INDEX_NORMAL);
+}
+
+s32 mMsg_request_main_wait(MessageWindow* window, s32 lastIndex, s32 prio) {
+    if (mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_WAIT, prio)) {
+        MessageRequestWaitData* data = &window->requestData.waitData;
+
+        data->lastMainIndex = lastIndex;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_request_main_appear_wait(MessageWindow* window, s32 lastIndex, s32 setupFlag, s32 prio) {
+    if (mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_APPEAR_WAIT, prio)) {
+        MessageRequestAppearWaitData* data = &window->requestData.appearWaitData;
+
+        data->lastMainIndex = lastIndex;
+        data->setupFlag = setupFlag;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_request_main_appear_wait_type2(MessageWindow* window, s32 flag) {
+    s32 index = window->mainIndex;
+
+    if (index == MESSAGE_MAIN_INDEX_WAIT) {
+        MessageMainWaitData* data = &window->mainData.waitData;
+        s32 lastIndex = data->lastMainIndex;
+        s32 setupFlag = flag ? TRUE : FALSE;
+
+        return mMsg_request_main_appear_wait(window, lastIndex, setupFlag, 5);
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_request_main_appear_wait_type1(MessageWindow* window) {
+    return mMsg_request_main_appear_wait_type2(window, TRUE);
+}
+
+s32 mMsg_request_main_normal(MessageWindow* window, s32 waitFlag, s32 prio) {
+    if (mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_NORMAL, prio)) {
+        MessageRequestNormalData* data = &window->requestData.normalData;
+
+        data->waitFlag = waitFlag;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_request_main_cursol(MessageWindow* window, s32 waitFlag, s32 prio) {
+    if (mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_CURSOL, prio)) {
+        MessageRequestCursolData* data = &window->requestData.cursolData;
+
+        data->waitFlag = waitFlag;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+void mMsg_Set_free_str(MessageWindow* window, s32 freeStrNo, char* str, s32 len) {
+    if (freeStrNo >= MESSAGE_FREE_STR0 && freeStrNo < MESSAGE_FREE_STR_MAX && str != NULL) {
+        s32 i;
+        char* freeStr = window->freeStr[freeStrNo];
+
+        if (len > MESSAGE_FREE_STR_LEN) {
+            len = MESSAGE_FREE_STR_LEN;
+        }
+
+        for (i = 0; i < MESSAGE_FREE_STR_LEN; i++) {
+            if (i < len) {
+                freeStr[i] = str[i];
+            } else {
+                freeStr[i] = ' ';
+            }
+        }
+    }
+
+    if (freeStrNo == MESSAGE_FREE_STR1) {
+        window->freeStrColorIdx[0] = 0;
+    } else if (freeStrNo == MESSAGE_FREE_STR2) {
+        window->freeStrColorIdx[1] = 0;
+    } else if (freeStrNo == MESSAGE_FREE_STR5) {
+        window->freeStrColorIdx[2] = 0;
+    }
+}
+
+void mMsg_Set_free_str_cl(MessageWindow* window, s32 freeStrNo, char* str, s32 len, s32 colorIdx) {
+    mMsg_Set_free_str(window, freeStrNo, str, len);
+
+    if (colorIdx != 0) {
+        if (freeStrNo == MESSAGE_FREE_STR1) {
+            window->freeStrColorIdx[0] = colorIdx;
+        } else if (freeStrNo == MESSAGE_FREE_STR2) {
+            window->freeStrColorIdx[1] = colorIdx;
+        } else if (freeStrNo == MESSAGE_FREE_STR5) {
+            window->freeStrColorIdx[2] = colorIdx;
+        }
+    }
+}
+
+void mMsg_Set_item_str(MessageWindow* window, s32 itemStrNo, char* str, s32 len) {
+    if (itemStrNo >= MESSAGE_ITEM_STR0 && itemStrNo < MESSAGE_ITEM_STR_MAX && str != NULL) {
+        s32 i;
+        char* freeStr = window->itemStr[itemStrNo];
+
+        if (len > MESSAGE_FREE_STR_LEN) {
+            len = MESSAGE_FREE_STR_LEN;
+        }
+
+        for (i = 0; i < MESSAGE_FREE_STR_LEN; i++) {
+            if (i < len) {
+                freeStr[i] = str[i];
+            } else {
+                freeStr[i] = ' ';
+            }
+        }
+    }
+}
+
+void mMsg_Get_free_str(MessageWindow* window, s32 freeStrNo, char* str) {
+    if (freeStrNo >= MESSAGE_FREE_STR0 && freeStrNo < MESSAGE_FREE_STR_MAX && str != NULL) {
+        s32 i;
+        char* freeStr = window->freeStr[freeStrNo];
+
+        for (i = 0; i < MESSAGE_FREE_STR_LEN; i++) {
+            str[i] = freeStr[i];
+        }
+    }
+}
+
+void mMsg_Get_item_str(MessageWindow* window, s32 itemStrNo, char* str) {
+    if (itemStrNo >= MESSAGE_ITEM_STR0 && itemStrNo < MESSAGE_ITEM_STR_MAX && str != NULL) {
+        s32 i;
+        char* itemStr = window->itemStr[itemStrNo];
+
+        for (i = 0; i < ITEM_NAME_LEN; i++) {
+            str[i] = itemStr[i];
+        }
+    }
+}
+// todo cn
+void mMsg_Set_mail_str(MessageWindow* window, s32 mailStrNo, char* str, s32 len) {
+    if (mailStrNo >= MESSAGE_MAIL_STR0 && mailStrNo < MESSAGE_MAIL_STR_MAX && str != NULL) {
+        s32 src;
+        s32 dst;
+        char* dstPtr;
+        char* srcPtr;
+        s32 rows;
+        s32 width;
+
+        if (len > MESSAGE_MAIL_STR_LEN) {
+            len = MESSAGE_MAIL_STR_LEN;
+        }
+
+        dst = 0;
+        dstPtr = window->mailStr[mailStrNo];
+        srcPtr = str;
+        rows = 0;
+        width = 0;
+
+        for (src = 0; src < len; src++) {
+            char c = *srcPtr++;
+
+            if (c == MESSAGE_CHAR_NEW_LINE) {
+                rows++;
+                *dstPtr++ = c;
+                dst++;
+                width = 0;
+
+                if (dst >= MESSAGE_MAIL_STR_LEN || rows > 4) {
+                    break;
+                }
+            } else {
+                *dstPtr++ = c;
+                dst++;
+                width++;
+
+                if (dst >= MESSAGE_MAIL_STR_LEN) {
+                    break;
+                } else if (width > 15) {
+                    rows++;
+                    *dstPtr++ = MESSAGE_CHAR_NEW_LINE;
+                    dst++;
+                    width = 0;
+                    if (dst >= MESSAGE_MAIL_STR_LEN || rows > 4) {
+                        break;
+                    }
+                }
+            }
+        }
+        for (dst; dst < MESSAGE_MAIL_STR_LEN; dst++) {
+            *dstPtr++ = ' ';
+        }
+    }
+}
+
+void mMsg_Set_continue_msg_num(MessageWindow* window, s32 msgNo) {
+    window->continueMsgNo = msgNo;
+}
+
+s32 mMsg_Get_msg_num(MessageWindow* window) {
+    MessageData* data = window->messageData;
+
+    if (window->dataLoaded != FALSE && data->dataLoaded != FALSE) {
+        return data->msgNo;
+    }
+
+    return -1;
+}
+
+int mMsg_Check_give_item() {
+    return common_data.clip.handOverItemClip != NULL && common_data.clip.handOverItemClip->masterActor != NULL;
+}
+
+s32 mMsg_Set_SizeCode(MessageWindow* window, s32 idx) {
+    return mFont_CodeSize_idx_get(window->messageData->dataBuffer, idx);
+}
+
+s32 mMsg_Count_SameCode(char* data, s32 start, s32 length, char code) {
+    s32 res = 0;
+    s32 i = start;
+    char* nowPtr;
+    char nowCode;
+
+    while (i < length) {
+        nowPtr = &data[i];
+        nowCode = *nowPtr;
+
+        if (nowCode == MESSAGE_CHAR_CONTROL_CODE) {
+            i += mFont_CodeSize_get(nowPtr);
+        } else if (nowCode == code) {
+            res++;
+            i++;
+        } else {
+            break;
+        }
+    }
+
+    return res;
+}
+
+s32 mMsg_Check_LastCode_forData(char* data, s32 idx) {
+    char code = data[idx];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        code = data[idx + 1];
+
+        if (code == 0) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Check_LastCode(MessageWindow* window, s32 idx) {
+    return mMsg_Check_LastCode_forData(window->messageData->dataBuffer, idx);
+}
+
+s32 mMsg_Check_ContinueCode_forData(char* data, s32 idx) {
+    char code = data[idx];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        code = data[idx + 1];
+
+        if (code == 1) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Check_ContinueCode(MessageWindow* window, s32 idx) {
+    return mMsg_Check_LastCode_forData(window->messageData->dataBuffer, idx);
+}
+
+s32 mMsg_Check_NextIndex_ContinueCode(MessageWindow* window) {
+    if (mMsg_Check_ContinueCode(window, window->endTextCursolIdx)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Check_NextIndex_LastCode(MessageWindow* window) {
+    if (mMsg_Check_LastCode(window, window->endTextCursolIdx)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Check_NextIndex_SetSelectWindowCode(MessageWindow* window) {
+    char* data = window->messageData->dataBuffer;
+    s32 idx = window->endTextCursolIdx;
+    char code = data[idx];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        code = data[idx + 1];
+
+        if (code == 13) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+f32 mMsg_Get_CursolSetTimeCode_forData(char* data, s32 idx) {
+    char code = data[idx];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        code = data[idx + 1];
+
+        if (code == 3) {
+            code = data[idx + 2];
+
+            return (f32)(s32)code;
+        }
+    }
+
+    return 0.0f;
+}
+
+f32 mMsg_Get_CursolSetTimeCode(MessageWindow* window, s32 idx) {
+    return mMsg_Get_CursolSetTimeCode_forData(window->messageData->dataBuffer, idx);
+}
+
+s32 mMsg_Get_ColorCode_forData(char* data, s32 idx, char* r, char* g, char* b) {
+    char code = data[idx];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        code = data[idx + 1];
+
+        if (code == 5) {
+            *r = data[idx + 2];
+            *g = data[idx + 3];
+            *b = data[idx + 4];
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Get_ColorCode(MessageWindow* window, s32 idx, char* r, char* g, char* b) {
+    return mMsg_Get_ColorCode_forData(window->messageData->dataBuffer, idx, r, g, b);
+}
+
+s32 mMsg_Get_OrderCode_forData(char* data, s32 idx, s32* orderIdx, u16* orderValue) {
+    char code = data[idx];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        code = data[idx + 1];
+
+        if (code == 8 || code == 9 || code == 10 || code == 11 || code == 12) {
+            u16 val;
+
+            *orderIdx = data[idx + 2];
+            val = (u16)(data[idx + 3]) << 8;
+            *orderValue = val | ((data[idx + 4]) & 0xFF);
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Get_OrderCode(MessageWindow* window, s32 idx, s32* orderIdx, u16* orderVal) {
+    return mMsg_Get_OrderCode_forData(window->messageData->dataBuffer, idx, orderIdx, orderVal);
+}
+
+s32 mMsg_Get_SoundCutCode_forData(char* data, s32 idx) {
+    if (data[idx] == MESSAGE_CHAR_CONTROL_CODE && data[idx + 1] == 81) {
+        return data[idx + 2];
+    }
+
+    return FALSE;
+}
+s32 mMsg_Get_SoundCutCode(MessageWindow* window, s32 idx) {
+    return mMsg_Get_SoundCutCode_forData(window->messageData->dataBuffer, idx);
+}
+
+void mMsg_Get_bgm_make_forData(char* data, s32 idx, s32* bgmType, s32* stopType) {
+    char* code = &data[idx];
+
+    if (code[0] == MESSAGE_CHAR_CONTROL_CODE && code[1] == 86 && code[2] < 8 && code[3] < 3) {
+        *bgmType = code[2];
+        *stopType = code[3];
+    } else {
+        *bgmType = 8;
+        *stopType = 3;
+    }
+}
+
+void mMsg_Get_bgm_make(MessageWindow* window, s32 idx, s32* bgmType, s32* stopTypee) {
+    mMsg_Get_bgm_make_forData(window->messageData->dataBuffer, idx, bgmType, stopTypee);
+}
+
+void mMsg_Get_bgm_delete_forData(char* data, s32 idx, s32* bgmType, s32* stopType) {
+    char* code = &data[idx];
+
+    if (code[0] == MESSAGE_CHAR_CONTROL_CODE && code[1] == 87 && code[2] < 8 && code[3] < 3) {
+        *bgmType = code[2];
+        *stopType = code[3];
+    } else {
+        *bgmType = 8;
+        *stopType = 3;
+    }
+}
+
+void mMsg_Get_bgm_delete(MessageWindow* window, s32 idx, s32* bgmType, s32* stopTypee) {
+    mMsg_Get_bgm_make_forData(window->messageData->dataBuffer, idx, bgmType, stopTypee);
+}
+
+s32 mMsg_Get_MsgTimeEnd_time_forData(char* data, s32 idx) {
+    char* code = &data[idx];
+
+    if (code[0] == MESSAGE_CHAR_CONTROL_CODE && code[1] == 88) {
+        return code[2];
+    }
+
+    return 0;
+}
+
+s32 mMsg_Get_MsgTimeEnd_time(MessageWindow* window, s32 idx) {
+    return mMsg_Get_MsgTimeEnd_time_forData(window->messageData->dataBuffer, idx);
+}
+
+int mMsg_Check_MsgTimeEndCode_forData(char* data, s32 idx) {
+    char* code = &data[idx];
+
+    return (code[0] == MESSAGE_CHAR_CONTROL_CODE && code[1] == 88);
+}
+
+s32 mMsg_Check_MsgTimeEndCode(MessageWindow* window, s32 idx) {
+    return mMsg_Check_MsgTimeEndCode_forData(window->messageData->dataBuffer, idx);
+}
+
+s32 mMsg_Check_NextIndex_MsgTimeEndCode(MessageWindow* window) {
+    return mMsg_Check_MsgTimeEndCode(window, window->endTextCursolIdx);
+}
+
+void mMsg_Get_sound_trg_sys_forData(char* data, s32 idx, s32* seNo) {
+    char* code = &data[idx];
+
+    if (code[0] == MESSAGE_CHAR_CONTROL_CODE && code[1] == 89 && code[2] < 7) {
+        *seNo = code[2];
+    } else {
+        *seNo = 7;
+    }
+}
+
+void mMsg_Get_sound_trg_sys(MessageWindow* window, s32 idx, s32* seNo) {
+    mMsg_Get_sound_trg_sys_forData(window->messageData->dataBuffer, idx, seNo);
+}
+
+void mMsg_Set_LineFontColor(MessageWindow* window, s32 lineNo, char r, char g, char b, char a) {
+    if (lineNo >= 0 && lineNo < MESSAGE_LINE_NUMBER) {
+        Color_RGBA8* color = &window->fontColor[lineNo];
+
+        color->r = r;
+        color->g = g;
+        color->b = b;
+        color->a = a;
+    }
+}
+
+void mMsg_init_FontColor(MessageWindow* window) {
+    s32 i;
+
+    for (i = 0; i < MESSAGE_LINE_NUMBER; i++) {
+        mMsg_Set_LineFontColor(window, i, 50, 60, 50, 255);
+    }
+}
+
+void mMsg_init_NowDisplayLIne(MessageWindow* window) {
+    window->nowDisplayLine = FALSE;
+}
+
+void mMsg_Clear_CursolIndex(MessageWindow* window) {
+    window->startTextCursolIdx = window->endTextCursolIdx;
+    mMsg_init_FontColor(window);
+    mMsg_init_NowDisplayLIne(window);
+}
+
+void mMsg_SetTimer(MessageWindow* window, f32 timer) {
+    window->cursolTimer = timer;
+}
+void mMsg_Get_BodyParam(s32 idx, u32* vramp, size_t* size) {
+    s32 sized;
+    u32 offsetPtrs[5];
+
+    if (idx >= 0 && idx < MESSAGE_IDX_MAX) {
+        u32 vrom;
+        if (idx & 1) {
+#ifndef AF_CN
+            DmaMgr_RequestSyncDebug(offsetPtrs, (u32)&D_CF9000[idx - 1], 8, "../m_msg_main.c", 855);
+#else
+            DmaMgr_RequestSyncDebug(offsetPtrs, (u32)&D_CF9000[idx - 1], 8, "../m_msg_main.c", 867);
+#endif
+            vrom = offsetPtrs[0];
+            sized = offsetPtrs[1] - vrom;
+        } else if (idx == 0) {
+#ifndef AF_CN
+            DmaMgr_RequestSyncDebug(offsetPtrs, (u32)&D_CF9000, 8, "../m_msg_main.c", 862);
+#else
+            DmaMgr_RequestSyncDebug(offsetPtrs, (u32)&D_CF9000, 8, "../m_msg_main.c", 874);
+#endif
+            vrom = 0;
+            sized = offsetPtrs[0] - vrom;
+        } else {
+#ifndef AF_CN
+            DmaMgr_RequestSyncDebug(offsetPtrs, (u32)&D_CF9000[idx - 2], 16, "../m_msg_main.c", 868);
+#else
+            DmaMgr_RequestSyncDebug(offsetPtrs, (u32)&D_CF9000[idx - 2], 16, "../m_msg_main.c", 880);
+#endif
+
+            vrom = offsetPtrs[1];
+            sized = offsetPtrs[2] - vrom;
+        }
+        if (sized <= MESSAGE_TEXT_BUFFER_LEN) {
+            *vramp = (u32)vrom + (u32)&D_BD4000;
+            *size = sized;
+#ifndef AF_CN
+        } else {
+            *vramp = NULL;
+            *size = 0;
+        }
+#else
+        } else {
+            *vramp = (u32)vrom + (u32)&D_BD4000;
+            *size = MESSAGE_TEXT_BUFFER_LEN;
+        }
+#endif
+    } else {
+        *vramp = NULL;
+        *size = 0;
+    }
+}
+
+s32 mMsg_Count_MsgData(char* data) {
+    s32 i = 0;
+
+    while (i < MESSAGE_TEXT_BUFFER_LEN) {
+        if (mMsg_Check_LastCode_forData(data, i) || mMsg_Check_ContinueCode_forData(data, i) ||
+            mMsg_Check_MsgTimeEndCode_forData(data, i)) {
+            i += mFont_CodeSize_idx_get(data, i);
+            break;
+        }
+
+        i += mFont_CodeSize_idx_get(data, i);
+    }
+
+    return i;
+}
+
+
+// todo
+s32 mMsg_LoadMsgData(MessageData* data, s32 idx, s32 cut) {
+    if (data != NULL) {
+        u32 addr;
+        u32 size;
+
+        //mMsg_Get_MsgDataAddressAndSize(idx, &addr, &size);
+        mMsg_Get_BodyParam(idx, &addr, &size);
+
+        if (addr != 0 && size != 0) {
+            u32 alignedAddr = addr & ~7;
+            s32 ofs = addr - alignedAddr;
+            char* dataBuffer = data->dataBuffer;
+
+#ifndef AF_CN
+
+            DmaMgr_RequestSyncDebug(data->dataBuffer, alignedAddr, ALIGN8((ofs) + size), "../m_msg_main.c", 962);
+#else
+            DmaMgr_RequestSyncDebug(data->dataBuffer, alignedAddr, ALIGN8((ofs) + size), "../m_msg_main.c", 974);
+
+#endif
+
+            {
+                char* dstPtr;
+                char* srcPtr;
+                s32 len;
+                s32 i;
+                len = size;
+                dstPtr = data->dataBuffer;
+                srcPtr = data->dataBuffer + ofs;
+                i = 0;
+
+                for (; i < len; i++) {
+                    *dstPtr++ = *srcPtr++;
+                }
+            }
+
+            data->msgNo = idx;
+            data->dataLoaded = TRUE;
+            data->msgLen = mMsg_Count_MsgData(data->dataBuffer);
+            data->cut = cut;
+
+            return TRUE;
+        }
+    }
+    data->dataLoaded = FALSE;
+
+    return FALSE;
+}
+
+s32 mMsg_ChangeMsgData(MessageWindow* window, s32 idx) {
+    if (idx >= 0 && idx < MESSAGE_IDX_MAX && mMsg_LoadMsgData(window->messageData, idx, FALSE)) {
+        window->endTextCursolIdx = 0;
+        mMsg_Clear_CursolIndex(window);
+        mMsg_SetTimer(window, 10.0f);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+void mMsg_Unset_NowUtter(MessageWindow* window) {
+    window->nowUtter = FALSE;
+}
+
+void mMsg_Set_NowUtter(MessageWindow* window) {
+    window->nowUtter = TRUE;
+}
+
+#ifndef AF_CN
+u8 mMsg_Check_NowUtter() {
+#else
+s8 mMsg_Check_NowUtter() {
+#endif
+    return mMsg_Get_base_window_p()->nowUtter;
+}
+
+void mMsg_init(Game_Play* play) {
+    mMsg_data.dataLoaded = FALSE;
+    mMsg_window.dataLoaded = FALSE;
+    mMsg_window.msgNo = 0;
+    mMsg_window.unk_008 = 0;
+    mMsg_window.messageData = &mMsg_data;
+    mMsg_window.centerX = 160.0f;
+    mMsg_window.centerY = 185.4f;
+    mMsg_window.width = 245.0f;
+    mMsg_window.height = 96.0f;
+    mMsg_window.clientActor = NULL;
+    mMsg_window.clientNameLen = 0;
+    mMsg_window.nameplateX = 61.0;
+    mMsg_window.nameplateY = 64.0;
+    mMsg_window.showContinueButton = FALSE;
+    mMsg_window.nameTextColor.r = 50;
+    mMsg_window.nameTextColor.g = 90;
+    mMsg_window.nameTextColor.b = 0;
+    mMsg_window.nameTextColor.a = 255;
+    mMsg_window.nameBackgroundColor.r = 160;
+    mMsg_window.nameBackgroundColor.g = 215;
+    mMsg_window.nameBackgroundColor.b = 30;
+    mMsg_window.nameBackgroundColor.a = 255;
+    mMsg_window.windowBackgroundColor.r = 235;
+    mMsg_window.windowBackgroundColor.g = 255;
+    mMsg_window.windowBackgroundColor.b = 235;
+    mMsg_window.windowBackgroundColor.a = 255;
+    mMsg_init_FontColor(&mMsg_window);
+    mMsg_init_NowDisplayLIne(&mMsg_window);
+    mMsg_window.continueButtonColor.r = 0;
+    mMsg_window.continueButtonColor.g = 0;
+    mMsg_window.continueButtonColor.b = 255;
+    mMsg_window.continueButtonColor.a = 0;
+    mMsg_window.fontScaleX = 1.0;
+    mMsg_window.fontScaleY = 1.0;
+    mMsg_window.unk_1A0 = 196;
+#ifndef AF_CN
+    mMsg_window.unk_1A4 = 66;
+#else
+    mMsg_window.unk_1A4 = 50;
+#endif
+    mMsg_window.textLines = MESSAGE_LINE_NUMBER;
+    mMsg_window.nowDisplayLine = 0;
+    mMsg_window.timer = 0.0f;
+    mMsg_SetTimer(&mMsg_window, 0.0f);
+    mMsg_window.continueButtonTimer = 0.0f;
+    mMsg_window.startTextCursolIdx = 0;
+    mMsg_window.endTextCursolIdx = 0;
+    mMsg_window.windowScale = 0.0f;
+    mMsg_window.textScale = 1.0f;
+    mMsg_window.requestedMainIndex = -1;
+    mMsg_window.requestedPriority = 0;
+    mMsg_window.mainIndex = 0;
+    mMsg_window.drawFlag = 0;
+    mMsg_window.cancelFlag = 0;
+    mMsg_window.cancelableFlag = 0;
+    mMsg_window.continueMsgNo = 0xFFFF;
+    mMsg_Unset_CancelNormalContinue(&mMsg_window);
+    mMsg_Unset_ForceNext(&mMsg_window);
+    mMsg_Unset_LockContinue(&mMsg_window);
+    mMsg_sound_MessageSpeedForce(0.0f);
+    mMsg_sound_MessageStatus(0);
+    mMsg_window.statusFlags &= ~0xC0;
+    mMsg_window.freeStrColorIdx[0] = 0;
+    mMsg_window.freeStrColorIdx[1] = 0;
+    mMsg_window.freeStrColorIdx[2] = 0;
+}
+
+s32 mMsg_Get_Length_String(char* str, s32 len) {
+    s32 i;
+
+    for (i = len - 1; i >= 0; i--) {
+        if (str[i] != ' ') {
+            break;
+        }
+    }
+
+    return i + 1;
+}
+
+s32 mMsg_Check_MainNormalContinue(MessageWindow* window) {
+    if (window->mainIndex == MESSAGE_MAIN_INDEX_NORMAL) {
+        if (mMsg_Check_NextIndex_ContinueCode(window)) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Check_MainNormal(MessageWindow* window) {
+    if (window->mainIndex == MESSAGE_MAIN_INDEX_NORMAL) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+s32 mMsg_Check_MainHide(MessageWindow* window) {
+    if (window->mainIndex == MESSAGE_MAIN_INDEX_HIDE) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+int mMsg_Check_MainDisappear(MessageWindow* window) {
+    return window->mainIndex == MESSAGE_MAIN_INDEX_DISAPPEAR;
+}
+
+void mMsg_Set_CancelNormalContinue(MessageWindow* window) {
+    window->continueCancelFlag = TRUE;
+}
+
+void mMsg_Unset_CancelNormalContinue(MessageWindow* window) {
+    window->continueCancelFlag = FALSE;
+}
+
+void mMsg_Set_ForceNext(MessageWindow* window) {
+    window->forceNext = TRUE;
+}
+
+void mMsg_Unset_ForceNext(MessageWindow* window) {
+    window->forceNext = FALSE;
+}
+
+s32 mMsg_Get_LockContinue(MessageWindow* window) {
+    return window->lockContinue;
+}
+
+void mMsg_Set_LockContinue(MessageWindow* window) {
+    window->lockContinue = TRUE;
+}
+
+void mMsg_Unset_LockContinue(MessageWindow* window) {
+    window->lockContinue = FALSE;
+}
+
+void mMsg_Set_idling_req(MessageWindow* window) {
+    window->statusFlags |= 0x40;
+}
+
+s32 mMsg_Check_idling_now(MessageWindow* window) {
+    return (window->statusFlags & 0x80) != FALSE;
+}
+
+s32 mMsg_MoveDataCut(char* data, s32 dstIdx, s32 srcIdx, s32 len, s32 spaceFlag) {
+    s32 newLen = len;
+
+    if (dstIdx < srcIdx) {
+        while (srcIdx < len) {
+            data[dstIdx] = data[srcIdx];
+            dstIdx++;
+            srcIdx++;
+        }
+
+        newLen -= srcIdx - dstIdx;
+
+        if (spaceFlag) {
+            while (dstIdx < len) {
+                data[dstIdx] = ' ';
+                dstIdx++;
+            }
+        }
+    } else if (dstIdx > srcIdx) {
+        s32 moveSize = len - srcIdx;
+        s32 offs = dstIdx - srcIdx;
+
+        newLen += offs;
+
+        if (newLen <= MESSAGE_TEXT_BUFFER_LEN) {
+            s32 i;
+            char* dstPtr = data + newLen - 1;
+            char* srcPtr = data + len - 1;
+
+            for (i = 0; i < moveSize; i++) {
+                *dstPtr-- = *srcPtr--;
+            }
+        }
+    }
+
+    return newLen;
+}
+
+void mMsg_CopyString(char* dst, char* src, s32 len) {
+    s32 i;
+
+    for (i = 0; i < len; i++) {
+        *dst++ = *src++;
+    }
+}
+
+s32 mMsg_Set_PlayerNameColor(char* data, s32* startIdx, s32 len) {
+    static char add_string[] = { MESSAGE_CHAR_CONTROL_CODE, 0x50, 75, 95, 155, 0 };
+    char* name = common_data.privateInfo->playerId.playerName;
+    s32 hyphenCount;
+#ifndef AF_CN
+    s32 nameLen = mMsg_Get_Length_String(name, PLAYER_NAME_LEN);
+#else
+    s32 nameLen = func_800A5490(name, PLAYER_NAME_LEN, 32);
+#endif
+    s32 commandLen;
+    s32 newLen;
+    s32 initialStartIdx;
+
+    initialStartIdx = *startIdx;
+    commandLen = mFont_CodeSize_idx_get(data, *startIdx);
+
+    if (nameLen > 0) {
+#ifndef AF_CN
+        hyphenCount = mMsg_Count_SameCode(data, (*startIdx) + commandLen, len, '\x90');
+
+        add_string[5] = nameLen + hyphenCount;
+#else
+        add_string[5] = nameLen;
+
+#endif
+        newLen = mMsg_MoveDataCut(data, initialStartIdx + sizeof(add_string), initialStartIdx, len, FALSE);
+        mMsg_CopyString(data + initialStartIdx, add_string, sizeof(add_string));
+
+        *startIdx += sizeof(add_string);
+    } else {
+        newLen = len;
+    }
+
+    return newLen;
+}
+
+s32 mMsg_CopyPlayerName(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char* name = common_data.privateInfo->playerId.playerName;
+    s32 nameLen = mMsg_Get_Length_String(name, PLAYER_NAME_LEN);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + nameLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], name, nameLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyTalkName(Actor* actor, char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char name[ANIMAL_NAME_LEN];
+    s32 nameLen;
+    s32 newLen;
+
+    if (actor != NULL) {
+        mNpc_GetNpcWorldName(name, (Npc*)actor);
+        nameLen = mMsg_Get_Length_String(name, sizeof(name));
+    } else {
+        nameLen = 0;
+    }
+
+    newLen = mMsg_MoveDataCut(data, startIdx + nameLen, startIdx + commandLen, len, FALSE);
+    mMsg_CopyString(&data[startIdx], name, nameLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyTail(Actor* actor, char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char* tail = actor != NULL ? mNpc_GetWordEnding(actor) : NULL;
+    s32 tailLen = actor != NULL ? mMsg_Get_Length_String(tail, ANIMAL_CATCHPHRASE_LEN) : 0;
+    s32 newLen;
+
+    newLen = mMsg_MoveDataCut(data, startIdx + tailLen, startIdx + commandLen, len, FALSE);
+    mMsg_CopyString(&data[startIdx], tail, tailLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyYear(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char yearStr[6];
+    s32 yearLen = mString_Load_YearStringFromRom(yearStr, common_data.time.rtcTime.year);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + yearLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], yearStr, yearLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyMonth(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char monthStr[6];
+    s32 monthLen = mString_Load_MonthStringFromRom(monthStr, common_data.time.rtcTime.month);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + monthLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], monthStr, monthLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyWeek(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char monthStr[6];
+    s32 monthLen = mString_Load_WeekStringFromRom(monthStr, common_data.time.rtcTime.weekday);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + monthLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], monthStr, monthLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyDay(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char dayStr[6];
+    s32 dayLen = mString_Load_DayStringFromRom(dayStr, common_data.time.rtcTime.day);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + dayLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], dayStr, dayLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyHour(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char hourStr[6];
+    s32 hourLen = mString_Load_HourStringFromRom(hourStr, common_data.time.rtcTime.hour);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + hourLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], hourStr, hourLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyMin(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char minStr[6];
+    s32 minLen = mString_Load_MinStringFromRom(minStr, common_data.time.rtcTime.min);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + minLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], minStr, minLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopySec(char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char secStr[6];
+    s32 secLen = mString_Load_SecStringFromRom(secStr, common_data.time.rtcTime.sec);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + secLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], secStr, secLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyFree(MessageWindow* window, s32 strNo, char* data, s32 startIdx, s32 len) {
+    s32 commandLen;
+    char* freeStr;
+    s32 freeStrLen;
+    s32 newLen;
+
+    if (strNo < MESSAGE_FREE_STR0 || strNo >= MESSAGE_FREE_STR_MAX) {
+        strNo = MESSAGE_FREE_STR0;
+    }
+
+    commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    freeStr = window->freeStr[strNo];
+    freeStrLen = mMsg_Get_Length_String(freeStr, MESSAGE_FREE_STR_LEN);
+    newLen = mMsg_MoveDataCut(data, startIdx + freeStrLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], freeStr, freeStrLen);
+
+    return newLen;
+}
+
+Color_RGB8 MMSG_pf_cl[6] = { { 0, 0, 0 },     { 145, 60, 145 }, { 50, 130, 70 },
+                             { 75, 95, 155 }, { 160, 50, 75 },  { 50, 75, 225 } };
+
+s32 mMsg_Set_PfColor(char* data, s32* startIdx, s32 len, char* freeStr, s32 fcColorId) {
+    static u8 add_string[] = { MESSAGE_CHAR_CONTROL_CODE, 0x50, 0, 0, 0, 0 };
+#ifndef AF_CN
+    s32 freeStrLen = mMsg_Get_Length_String(freeStr, MESSAGE_FREE_STR_LEN);
+#else
+    s32 freeStrLen = func_800A5490(freeStr, MESSAGE_FREE_STR_LEN, 32);
+#endif
+    s32 newLen;
+    s32 srcIdx = *startIdx;
+    Color_RGB8* colorData = &MMSG_pf_cl[fcColorId];
+
+    add_string[2] = colorData->r;
+    add_string[3] = colorData->g;
+    add_string[4] = colorData->b;
+
+    add_string[5] = freeStrLen;
+
+    newLen = mMsg_MoveDataCut(data, srcIdx + sizeof(add_string), srcIdx, len, FALSE);
+    mMsg_CopyString(data + srcIdx, add_string, sizeof(add_string));
+
+    *startIdx += sizeof(add_string);
+
+    return newLen;
+}
+
+s32 mMsg_CopyDetermination(MessageWindow* window, char* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char* str = window->choiceWindow.data.determinationString;
+    s32 strLen = window->choiceWindow.data.determinationLenght;
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + strLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], str, strLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyCountryName(char* data, s32 startIdx, s32 len) {
+    s32 newLen;
+    s32 newStartIdx;
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    char* landName = mLd_GetLandName();
+    s32 landNameLen = mMsg_Get_Length_String(landName, LAND_NAME_SIZE);
+    char muraStr[MESSAGE_FREE_STR_LEN];
+    char* muraStrPtr;
+    s32 muraSize;
+
+    newStartIdx = startIdx + landNameLen;
+    newLen = mMsg_MoveDataCut(data, startIdx + landNameLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], landName, landNameLen);
+
+    muraStrPtr = muraStr;
+    mString_Load_StringFromRom(muraStrPtr, sizeof(muraStr), 0x1E4);
+
+    muraSize = mMsg_Get_Length_String(muraStrPtr, sizeof(muraStr));
+    newLen = mMsg_MoveDataCut(data, newStartIdx + muraSize, newStartIdx, newLen, FALSE);
+
+    mMsg_CopyString(&data[newStartIdx], muraStrPtr, muraSize);
+
+    return newLen;
+}
+
+s32 mMsg_CopyRamdomNumber2(u8* data, s32 startIdx, s32 len) {
+    s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    u16 rng = get_random_timer(0, 100) % 100;
+    char str[2];
+    s32 strLen = mFont_UnintToString(str, rng, 2, 1, FALSE);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + strLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], str, strLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyItem(MessageWindow* window, s32 strNo, char* data, s32 startIdx, s32 len) {
+    s32 commandLen;
+    char* itemStr;
+    s32 itemStrLen;
+    s32 newLen;
+
+    if (strNo < MESSAGE_ITEM_STR0 || strNo >= MESSAGE_ITEM_STR_MAX) {
+        strNo = MESSAGE_ITEM_STR0;
+    }
+
+    commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    itemStr = window->itemStr[strNo];
+    itemStrLen = mMsg_Get_Length_String(itemStr, ITEM_NAME_LEN);
+    newLen = mMsg_MoveDataCut(data, startIdx + itemStrLen, startIdx + commandLen, len, FALSE);
+
+    mMsg_CopyString(&data[startIdx], itemStr, itemStrLen);
+
+    return newLen;
+}
+
+s32 mMsg_CopyMail(MessageWindow* window, s32 strNo, char* data, s32 startIdx, s32 len) {
+    s32 commandLen;
+    char* mailStr;
+    s32 mailStrLen;
+    s32 newLen;
+
+    if (strNo < MESSAGE_MAIL_STR0 || strNo >= MESSAGE_MAIL_STR_MAX) {
+        strNo = MESSAGE_MAIL_STR0;
+    }
+
+    commandLen = mFont_CodeSize_idx_get(data, startIdx);
+    mailStr = window->mailStr[strNo];
+    mailStrLen = mMsg_Get_Length_String(mailStr, MESSAGE_MAIL_STR_LEN);
+    newLen = mMsg_MoveDataCut(data, startIdx + mailStrLen, startIdx + commandLen, len, TRUE);
+
+    mMsg_CopyString(&data[startIdx], mailStr, mailStrLen);
+
+    return newLen;
+}
+
+s32 mMsg_sound_voice_get(s32 code) {
+    static u8 voice_array[] = {
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12,
+        0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x55, 0x50, 0x52, 0x21,
+        0x22, 0x4E, 0x4E, 0x52, 0x52, 0x52, 0x4E, 0x4E, 0x52, 0x4E, 0x52, 0x54, 0x2A, 0x02, 0x16, 0x0B, 0x0C, 0x32,
+        0x2B, 0x15, 0x1A, 0x08, 0x52, 0x52, 0x4E, 0x4E, 0x4E, 0x4F, 0x52, 0x04, 0x3C, 0x0C, 0x39, 0x02, 0x1C, 0x34,
+        0x1B, 0x02, 0x34, 0x09, 0x2A, 0x21, 0x2D, 0x05, 0x41, 0x07, 0x29, 0x0D, 0x13, 0x25, 0x3D, 0x38, 0x08, 0x2C,
+        0x36, 0x23, 0x4E, 0x24, 0x25, 0x52, 0x26, 0x04, 0x3C, 0x0C, 0x39, 0x02, 0x1C, 0x34, 0x1B, 0x02, 0x34, 0x09,
+        0x2A, 0x21, 0x2D, 0x05, 0x41, 0x07, 0x29, 0x0D, 0x13, 0x25, 0x3D, 0x38, 0x08, 0x2C, 0x36, 0x27, 0x28, 0x29,
+        0x2A, 0xFF, 0xFF, 0x52, 0x52, 0x52, 0x52, 0x4E, 0x05, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4B, 0x4C, 0x4D, 0x4A,
+        0x51, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11,
+        0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23,
+        0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x3D, 0x52, 0x2B, 0x2C, 0x05, 0x2D, 0x45, 0x46,
+        0x47, 0x48, 0x49, 0x4B, 0x4C, 0x4D, 0x4A, 0x4E, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x34, 0x35, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44, 0x2E, 0x2F, 0x30,
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x34, 0x35, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40,
+        0x41, 0x42, 0x43, 0x44,
+    };
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE || code == MESSAGE_CHAR_TAG_CODE) {
+        return -1;
+    }
+
+    return voice_array[code];
+}
+
+s32 mMsg_sound_voice_get2(s32 code) {
+    if (code == MESSAGE_CHAR_NEW_LINE) {
+        return 0x53;
+    }
+
+    return mMsg_sound_voice_get(code);
+}
+
+int mMsg_check_sound_special(MessageWindow* window) {
+    s32 msgNo = window->messageData->msgNo;
+
+    return (msgNo >= 0x1743 && msgNo <= 0x1756) || (msgNo >= 0x1799 && msgNo <= 0x17AC);
+}
+
+int mMsg_check_sound_animal(MessageWindow* window) {
+
+    return window->showActorName || mMsg_check_sound_special(window);
+}
+
+s32 mMsg_sound_npc_id_get(MessageWindow* window) {
+    s32 id = 0;
+    Npc* npc = (Npc*)window->clientActor;
+
+    if (npc != NULL && npc->actor.part == ACTOR_PART_NPC) {
+        id = npc->npcSoundId;
+    }
+
+    return id;
+}
+
+void mMsg_sound_voice_entry(MessageWindow* window, s32 voiceSfxIdx, u8 voiceIdx, s16 animalVoiceIdx) {
+    window->voiceSfxIdx = voiceSfxIdx;
+    window->voiceIdx = voiceIdx;
+    window->animalVoiceIdx = animalVoiceIdx;
+    window->statusFlags |= 0x20;
+}
+
+void mMsg_sound_voice_endcode_set(MessageWindow* window) {
+    s32 id = mMsg_sound_npc_id_get(window);
+
+    sAdo_VoiceSe(0x53, id, 32);
+    window->statusFlags &= ~0x20;
+}
+
+int mMsg_sound_CodeVoice(MessageWindow* window, s32 idx) {
+    s32 npcId;
+    char* data = window->messageData->dataBuffer;
+    s32 voiceId = mMsg_sound_voice_get2(data[idx]);
+
+    if (voiceId < 0) {
+        return FALSE;
+    } else if ((window->statusFlags & 1) != 0) {
+        s32 voiceMode = common_data.save.config.voiceMode;
+
+        if (voiceMode != 2) {
+            sAdo_SysTrgStart(0x54);
+        }
+
+        mMsg_sound_voice_endcode_set(window);
+        return FALSE;
+    }
+    if (voiceId == 0x54) {
+        npcId = 0;
+    } else {
+        npcId = mMsg_sound_npc_id_get(window);
+    }
+
+    mMsg_sound_voice_entry(window, idx, voiceId, npcId);
+    return voiceId != 0x55 && voiceId != 0x50 && voiceId != 0x4E && voiceId != 0x4F && voiceId != 0x52 &&
+           voiceId != 0x54;
+}
+
+void mMsg_sound_PAGE_OKURI() {
+    sAdo_SysTrgStart(0xB);
+}
+
+void mMsg_sound_ZOOMUP() {
+    sAdo_SysTrgStart(0x4);
+}
+
+void mMsg_sound_ZOOMDOWN_SHORT() {
+    sAdo_SysTrgStart(0x5);
+}
+
+void mMsg_sound_ZOOMDOWN_LONG() {
+    sAdo_SysTrgStart(0x15);
+}
+
+u8 Sound_Now_MessageSpeed = 1;
+
+void mMsg_sound_MessageSpeedForce(f32 timer) {
+    u8 sTimer = (s32)timer;
+
+    sTimer++;
+
+    if (sTimer > 0) {
+        if (sAdo_MessageSpeedGet() != sTimer) {
+            sAdo_MessageSpeed(sTimer);
+        }
+
+        Sound_Now_MessageSpeed = sTimer;
+    } else {
+        sAdo_MessageSpeed(1);
+        Sound_Now_MessageSpeed = 1;
+    }
+}
+
+void mMsg_sound_MessageSpeedClear() {
+    if (Sound_Now_MessageSpeed != 1) {
+        Sound_Now_MessageSpeed = 1;
+    } else if (sAdo_MessageSpeedGet() != 1) {
+        sAdo_MessageSpeed(1);
+    }
+}
+
+void mMsg_sound_MessageStatus(u8 status) {
+    sAdo_MessageStatus(status);
+}
+
+u8 mMsg_bgm_num[] = { 255, 47, 48, 49, 50, 66, 255, 78, 122 };
+
+u16 mMsg_bgm_stop[] = { 0x168, 0, 0x321C };
+
+void mMsg_sound_bgm_make(s32 bgmNum, s32 stopType) {
+    if (bgmNum == 0) {
+        mBGMPsComp_make_ps_quiet(mMsg_bgm_stop[stopType]);
+    } else if (bgmNum == 6) {
+        mBGMPsComp_make_ps_fc_quietField(mMsg_bgm_stop[stopType]);
+    } else {
+        mBGMPsComp_make_ps_demo(mMsg_bgm_num[bgmNum], mMsg_bgm_stop[stopType]);
+    }
+}
+
+void mMsg_sound_bgm_delete(s32 bgmNum, s32 stopType) {
+    if (bgmNum == 0) {
+        mBGMPsComp_delete_ps_quiet();
+    } else {
+        mBGMPsComp_delete_ps_demo(mMsg_bgm_num[bgmNum], mMsg_bgm_stop[stopType]);
+    }
+}
+
+void mMsg_sound_sound_trg_sys(s32 seNum) {
+    static u16 mMsg_se_num[] = { 0x1050, 0x012E, 0x012F, 0x0130, 0x0131, 0x0427, 0x0428 };
+
+    sAdo_SysTrgStart(mMsg_se_num[seNum]);
+}
+
+u8 mMsg_sound_voice_mode_get(MessageWindow* window) {
+    s32 voiceMode = common_data.save.config.voiceMode;
+    u8 mode;
+
+    if (mMsg_check_sound_animal(window)) {
+        static u8 mode_table[] = { 0, 1, 2 };
+
+        mode = mode_table[voiceMode];
+    } else if (voiceMode == 2) {
+        mode = 2;
+    } else {
+        mode = 1;
+    }
+
+    return mode;
+}
+
+void mMsg_sound_voice_mode(MessageWindow* window) {
+    sAdo_SetVoiceMode(mMsg_sound_voice_mode_get(window));
+}
+
+void mMsg_sound_spec_change_voice_force(MessageWindow* window) {
+    s32 spec;
+
+    if (mMsg_check_sound_special(window)) {
+        spec = 4;
+    } else {
+        spec = mNpc_GetNpcSoundSpec(window->clientActor);
+    }
+
+    sAdo_SpecChange(spec);
+    window->statusFlags |= 0x10;
+    window->spec = spec;
+}
+
+s32 mMsg_sound_spec_change_voice(MessageWindow* window) {
+    if (mMsg_sound_voice_mode_get(window) == 0) {
+        mMsg_sound_spec_change_voice_force(window);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+void mMsg_sound_spec_change_scene(MessageWindow* window) {
+    if ((window->statusFlags & 0x10) != 0) {
+        window->statusFlags &= ~0x10;
+    }
+}
+
+void mMsg_sound_spec_change_true(MessageWindow* window) {
+    Actor* actor = window->clientActor;
+
+    if (actor != NULL && actor->part == ACTOR_PART_NPC) {
+        u16 name = actor->fgName;
+
+        if (name == 0xD026 || name == 0xD037) {
+            sAdo_SpecChange(window->spec);
+        }
+    }
+}
+
+void mMsg_sound_spec_change_false(MessageWindow* window) {
+    Actor* actor = window->clientActor;
+
+    if (actor != NULL && actor->part == ACTOR_PART_NPC) {
+        u16 name = actor->fgName;
+
+        if (name == 0xD026 || name == 0xD037) {
+            sAdo_SpecChange(7);
+        }
+    }
+}
+
+void mMsg_Main_Hide(MessageWindow* window, Game_Play* play) {
+    mMsg_MainSetup_Window(window, play);
+}
+
+void mMsg_MainSetup_Hide(MessageWindow* window, Game_Play* play) {
+    mMsg_init(play);
+}
+
+s32 mMsg_Main_Appear_SetScale(MessageWindow* window, Game_Play* play) {
+    if (window->timer < 9.0f) {
+        f32 scale;
+
+        window->timer += 1.0f;
+        scale = get_percent_forAccelBrake(window->timer, 0.0f, 9.0f, 0.0f, 0.0f);
+        window->windowScale = scale;
+        window->textScale = scale;
+        return FALSE;
+    } else {
+        window->windowScale = 1.0f;
+        window->textScale = 1.0f;
+        window->timer = 0.0f;
+        return TRUE;
+    }
+}
+
+void mMsg_request_main_index_fromAppear(MessageWindow* window, Game_Play* play, s32 scaleDownFlag) {
+    if (scaleDownFlag && mMsg_request_main_cursol(window, FALSE, 5)) {
+        mMsg_SetTimer(window, 10.0f);
+    }
+}
+
+void mMsg_Main_Appear(MessageWindow* window, Game_Play* play) {
+    s32 scaleDownFlag = mMsg_Main_Appear_SetScale(window, play);
+
+    mMsg_request_main_index_fromAppear(window, play, scaleDownFlag);
+    mMsg_MainSetup_Window(window, play);
+}
+
+void mMsg_MainSetup_Appear(MessageWindow* window, Game_Play* play) {
+    UNUSED s32 pad;
+    MessageRequestAppearData* appearData;
+    s32 msgNo;
+
+    appearData = &window->requestData.appearData;
+    msgNo = appearData->msgNo;
+
+    if (mMsg_LoadMsgData(window->messageData, msgNo, FALSE)) {
+        mMsg_Set_client_actor_p(window, appearData->speakerActor, appearData->nameShown);
+        window->windowBackgroundColor = appearData->windowColor;
+        mMsg_sound_spec_change_voice(window);
+        mMsg_sound_voice_mode(window);
+        window->mainIndex = MESSAGE_MAIN_INDEX_APPEAR;
+        window->drawFlag = TRUE;
+        window->windowScale = 0.0f;
+        window->textScale = 0.0f;
+        window->timer = 0.0f;
+        window->showContinueButton = FALSE;
+        window->requestedMainIndex = -1;
+        window->requestedPriority = 4;
+        window->startTextCursolIdx = 0;
+        window->endTextCursolIdx = 0;
+
+        if (window->clientActor != NULL) {
+            switch (mNpc_GetNpcSex(window->clientActor)) {
+                case NPC_SEX_MALE:
+                    window->nameBackgroundColor.r = 70;
+                    window->nameBackgroundColor.g = 245;
+                    window->nameBackgroundColor.b = 255;
+                    window->nameTextColor.r = 0;
+                    window->nameTextColor.g = 0;
+                    window->nameTextColor.b = 15;
+                    break;
+
+                case NPC_SEX_FEMALE:
+                    window->nameBackgroundColor.r = 235;
+                    window->nameBackgroundColor.g = 140;
+                    window->nameBackgroundColor.b = 210;
+                    window->nameTextColor.r = 45;
+                    window->nameTextColor.g = 0;
+                    window->nameTextColor.b = 30;
+                    break;
+                default:
+                    window->nameBackgroundColor.r = 185;
+                    window->nameBackgroundColor.g = 255;
+                    //! FAKE
+                    if (1)
+                        ;
+                    window->nameBackgroundColor.b = 0;
+                    window->nameTextColor.r = 0;
+                    window->nameTextColor.g = 30;
+                    window->nameTextColor.b = 0;
+                    break;
+            }
+        }
+        window->dataLoaded = TRUE;
+
+        { s32 scoped; }
+    } else {
+        window->dataLoaded = FALSE;
+    }
+}
+
+int mMsg_Check_ScrollOrder(MessageWindow* window) {
+    return (chkTrigger(A_BUTTON) || chkTrigger(B_BUTTON));
+}
+
+s32 mMsg_MsgTimeEnd_dec(MessageWindow* window) {
+    if (window->endTimer == 0) {
+        return FALSE;
+    } else if (window->endTimer == 1) {
+        return TRUE;
+    } else {
+        window->endTimer--;
+        return FALSE;
+    }
+}
+
+void mMsg_end_to_disappear(MessageWindow* window) {
+    if (mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_DISAPPEAR, 5)) {
+        mMsg_Clear_CursolIndex(window);
+        mMsg_Unset_ForceNext(window);
+    }
+}
+
+void mMsg_request_main_index_fromNormal(MessageWindow* window, Game_Play* play) {
+    if (mMsg_MsgTimeEnd_dec(window) && mMsg_Check_NextIndex_MsgTimeEndCode(window)) {
+        mMsg_end_to_disappear(window);
+    } else if ((mMsg_Check_ScrollOrder(window) || window->forceNext) && window->lockContinue == FALSE) {
+        s32 last = FALSE;
+
+        if (mMsg_Check_NextIndex_ContinueCode(window) && window->continueCancelFlag == FALSE) {
+            s32 continueMsg = window->continueMsgNo;
+
+            if (continueMsg >= 0 && mMsg_ChangeMsgData(window, continueMsg)) {
+                if (mMsg_request_main_cursol(window, FALSE, 5) && window->forceNext == FALSE &&
+                    mMsg_Check_NextIndex_SetSelectWindowCode(window) == FALSE) {
+                    if ((window->statusFlags & 2) == 0) {
+                        mMsg_sound_PAGE_OKURI();
+                    }
+                }
+
+                mMsg_Unset_ForceNext(window);
+                mMsg_Set_continue_msg_num(window, -1);
+            }
+        } else if ((mMsg_Check_NextIndex_ContinueCode(window) && window->continueCancelFlag) ||
+                   (last = mMsg_Check_NextIndex_LastCode(window)) || mMsg_Check_NextIndex_MsgTimeEndCode(window)) {
+            if ((window->statusFlags & 0x80) == 0) {
+                if (last && (window->statusFlags & 0x40)) {
+                    window->statusFlags |= 0x80;
+                } else {
+                    mMsg_end_to_disappear(window);
+                }
+            }
+        } else if (mMsg_request_main_cursol(window, FALSE, 5)) {
+            if (window->forceNext == FALSE && mMsg_Check_NextIndex_SetSelectWindowCode(window) == FALSE &&
+                (window->statusFlags & 2) == 0) {
+                mMsg_sound_PAGE_OKURI();
+            }
+
+            mMsg_Unset_ForceNext(window);
+        }
+    }
+}
+
+// todo cn
+void mMsg_Set_display_button_turn_color(MessageWindow* window, Game_Play* play) {
+
+    f32* timer = &window->continueButtonTimer;
+
+    *timer += 1.0f;
+    if (*timer >= MESSAGE_BUTTON_TURN_TIME) {
+        *timer = 0.0f;
+    }
+    {
+        f32 target = (*timer - MESSAGE_BUTTON_TURN_TIME / 2) / (MESSAGE_BUTTON_TURN_TIME / 2);
+
+        if (target <= 0.0f) {
+            target = 1.0f + target;
+        } else {
+            target = 1.0f - target;
+        }
+
+        if (target < 0.0f) {
+            target = 0.0f;
+        } else if (target > 1.0f) {
+            target = 1.0f;
+        }
+
+        window->continueButtonColor.a = (s32)(target * 255.0f);
+    }
+}
+
+void mMsg_Main_Normal(MessageWindow* window, Game_Play* play) {
+    mMsg_Set_display_button_turn_color(window, play);
+    mMsg_request_main_index_fromNormal(window, play);
+    mMsg_MainSetup_Window(window, play);
+
+    if (window->mainIndex != MESSAGE_MAIN_INDEX_NORMAL) {
+        window->statusFlags &= ~0x2;
+    }
+}
+
+void mMsg_MainSetup_Normal(MessageWindow* window, Game_Play* play) {
+    MessageRequestNormalData* normalData = &window->requestData.normalData;
+    s32 waitFlag = normalData->waitFlag;
+
+    window->mainIndex = MESSAGE_MAIN_INDEX_NORMAL;
+    window->drawFlag = TRUE;
+    window->requestedMainIndex = -1;
+    window->requestedPriority = 4;
+    window->statusFlags &= ~0x80;
+
+    if (waitFlag != TRUE) {
+        window->continueButtonTimer = 0.0f;
+        window->continueButtonColor.a = 0;
+
+        if (window->endTimer == 0) {
+            window->showContinueButton = TRUE;
+        } else {
+            window->showContinueButton = FALSE;
+        }
+
+        window->cancelFlag = FALSE;
+    }
+}
+
+s32 mMsg_Check_CancelOrder(MessageWindow* window) {
+    if (window->cancelableFlag != FALSE && window->cancelFlag == FALSE) {
+        if (chkTrigger(A_BUTTON) || chkTrigger(B_BUTTON)) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Main_Cursol_Check_ControlCursol(MessageWindow* window, s32 idx) {
+    char* data = window->messageData->dataBuffer;
+    char code = data[idx];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+s32 mMsg_Main_Cursol_Last_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    window->endTextCursolIdx = *idxPtr;
+
+    if ((window->statusFlags & 0x8)) {
+        window->statusFlags &= ~0x8;
+        return 1;
+    } else {
+        window->statusFlags |= 0x8;
+        return 2;
+    }
+}
+
+s32 mMsg_Main_Cursol_Continue_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    window->endTextCursolIdx = *idxPtr;
+
+    if ((window->statusFlags & 0x8)) {
+        window->statusFlags &= ~0x8;
+        return 1;
+    } else {
+        window->statusFlags |= 0x8;
+        return 2;
+    }
+}
+
+s32 mMsg_Main_Cursol_Clear_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->endTextCursolIdx = *idxPtr;
+
+    mMsg_Clear_CursolIndex(window);
+    mMsg_SetTimer(window, 10.0f);
+
+    return 2;
+}
+
+s32 mMsg_Main_Cursol_CursolSetTime_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    f32 setTime = mMsg_Get_CursolSetTimeCode(window, *idxPtr);
+
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->endTextCursolIdx = *idxPtr;
+
+    if (window->cancelFlag) {
+        return 0;
+    }
+
+    if (setTime > 0.0f) {
+        window->cursolTimer = setTime;
+
+        if ((window->statusFlags & 0x100) != 0) {
+            mMsg_sound_MessageSpeedForce(1.0f);
+        } else {
+            mMsg_sound_MessageSpeedForce(setTime);
+        }
+
+        return 2;
+    }
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_Button_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    if ((window->statusFlags & 0x8)) {
+        window->statusFlags &= ~0x8;
+        (*idxPtr) += mMsg_Set_SizeCode(window, *idxPtr);
+        window->endTextCursolIdx = *idxPtr;
+        return 1;
+    } else {
+        window->statusFlags |= 0x8;
+        window->endTextCursolIdx = *idxPtr;
+        return 2;
+    }
+}
+
+s32 mMsg_Main_Cursol_Color_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    s32 displayedLine = window->nowDisplayLine;
+    Color_RGBA8* textColor;
+
+    if (displayedLine >= 0 && displayedLine < MESSAGE_LINE_NUMBER) {
+        textColor = &window->fontColor[displayedLine];
+    } else {
+        textColor = &window->fontColor[0];
+    }
+
+    mMsg_Get_ColorCode(window, *idxPtr, &textColor->r, &textColor->g, &textColor->b);
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_AbleCancel_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->cancelableFlag = TRUE;
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_UnableCancel_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->cancelFlag = FALSE;
+    window->cancelableFlag = FALSE;
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetDemoOrder_ControlCursol(MessageWindow* window, s32* idxPtr, DemoOrderType demoType) {
+    s32 idx;
+    u16 val;
+
+    mMsg_Get_OrderCode(window, *idxPtr, &idx, &val);
+    mDemo_Set_OrderValue(demoType, idx, val);
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetDemoOrderPlayer_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetDemoOrder_ControlCursol(window, idxPtr, DEMO_ORDER_PLAYER);
+}
+
+s32 mMsg_Main_Cursol_SetDemoOrderNpc0_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetDemoOrder_ControlCursol(window, idxPtr, DEMO_ORDER_NPC0);
+}
+
+s32 mMsg_Main_Cursol_SetDemoOrderNpc1_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetDemoOrder_ControlCursol(window, idxPtr, DEMO_ORDER_NPC1);
+}
+
+s32 mMsg_Main_Cursol_SetDemoOrderNpc2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetDemoOrder_ControlCursol(window, idxPtr, DEMO_ORDER_NPC2);
+}
+
+s32 mMsg_Main_Cursol_SetDemoOrderQuest_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetDemoOrder_ControlCursol(window, idxPtr, DEMO_ORDER_QUEST);
+}
+
+s32 mMsg_Main_Cursol_SetSelectWindow_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->endTextCursolIdx = *idxPtr;
+    mChoice_Change_request_main_index(&window->choiceWindow, Choice_MAIN_INDEX_APPEAR);
+
+    return 2;
+}
+
+s32 mMsg_Main_Cursol_SetNextMessage_ControlCursol(MessageWindow* window, s32* idxPtr, s32 selectNo) {
+    u16 msgNo;
+    u8* data = window->messageData->dataBuffer;
+    s32 choiceNum = mChoice_Get_ChoseNum(mChoice_Get_base_window_p());
+
+    msgNo = data[(*idxPtr) + 2] << 8;
+    msgNo = ((data[(*idxPtr) + 3]) & 0xFF) | msgNo;
+
+    if (selectNo == 0xFF || selectNo == choiceNum) {
+        if (msgNo != 0xFFFF) {
+            mMsg_Set_continue_msg_num(window, msgNo);
+        } else {
+            mMsg_Set_CancelNormalContinue(window);
+        }
+    }
+
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetNextMessageF_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessage_ControlCursol(window, idxPtr, 0xFF);
+}
+
+s32 mMsg_Main_Cursol_SetNextMessage0_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessage_ControlCursol(window, idxPtr, 0);
+}
+
+s32 mMsg_Main_Cursol_SetNextMessage1_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessage_ControlCursol(window, idxPtr, 1);
+}
+
+s32 mMsg_Main_Cursol_SetNextMessage2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessage_ControlCursol(window, idxPtr, 2);
+}
+
+s32 mMsg_Main_Cursol_SetNextMessage3_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessage_ControlCursol(window, idxPtr, 3);
+}
+
+s32 mMsg_Main_Cursol_SetNextMessageRamdomCommon_ControlCursol(MessageWindow* window, s32* idxPtr, s32 max) {
+    u16 msgTable[4];
+    u8* data = window->messageData->dataBuffer;
+    s32 selected = get_random_timer(0, max);
+    s32 i;
+
+    for (i = 0; i < max; i++) {
+        msgTable[i] = data[*idxPtr + 2 + i * 2] << 8;
+        msgTable[i] = msgTable[i] | (data[*idxPtr + 3 + i * 2] & 0xFF);
+    }
+
+    if (selected < 0 || selected >= max) {
+        selected = 0;
+    }
+
+    mMsg_Set_continue_msg_num(window, msgTable[selected]);
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetNextMessageRamdom2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessageRamdomCommon_ControlCursol(window, idxPtr, 2);
+}
+
+s32 mMsg_Main_Cursol_SetNextMessageRamdom3_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessageRamdomCommon_ControlCursol(window, idxPtr, 3);
+}
+
+s32 mMsg_Main_Cursol_SetNextMessageRamdom4_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetNextMessageRamdomCommon_ControlCursol(window, idxPtr, 4);
+}
+
+s32 mMsg_Main_Cursol_SetSelectString_ControlCursol(MessageWindow* window, s32* idxPtr, s32 selectCount) {
+    char* data = window->messageData->dataBuffer;
+    s32 idTable[Choice_CHOICE_MAX];
+    s32 i;
+    u16 id;
+    char* str0;
+    char* str1;
+    char* str2;
+    char* str3;
+
+    if ((idxPtr && idxPtr) && idxPtr) {}
+    id = data[(*idxPtr) + 2] << 8;
+    id = id | data[(*idxPtr) + 3] & 0xFF;
+    idTable[0] = id;
+
+    id = data[(*idxPtr) + 4] << 8;
+    id = id | data[(*idxPtr) + 5] & 0xFF;
+    idTable[1] = id;
+
+    if (selectCount > 2) {
+        id = data[(*idxPtr) + 6] << 8;
+        id = id | data[(*idxPtr) + 7] & 0xFF;
+        idTable[2] = id;
+    }
+
+    if (selectCount > 3) {
+        id = data[*idxPtr + 8] << 8;
+        id = id | data[(*idxPtr) + 9] & 0xFF;
+        idTable[3] = id;
+    }
+
+    if (selectCount >= 2 && selectCount <= Choice_CHOICE_MAX) {
+        static u8 str[Choice_CHOICE_MAX][Choice_CHOICE_STRING_LEN];
+        Actor* actor = window->clientActor;
+
+        for (i = 0; i < selectCount; i++) {
+            mChoice_Load_ChoseStringFromRom(mChoice_Get_base_window_p(), str[i], idTable[i], actor);
+        }
+
+        str0 = str[0];
+        str1 = str[1];
+        str2 = selectCount > 2 ? str[2] : NULL;
+        str3 = selectCount > 3 ? str[3] : NULL;
+
+        mChoice_Set_choice_data(mChoice_Get_base_window_p(), str0, Choice_CHOICE_STRING_LEN, str1,
+                                Choice_CHOICE_STRING_LEN, str2, Choice_CHOICE_STRING_LEN, str3,
+                                Choice_CHOICE_STRING_LEN);
+    }
+
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetSelectString2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetSelectString_ControlCursol(window, idxPtr, Choice_CHOICE2);
+}
+
+s32 mMsg_Main_Cursol_SetSelectString3_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetSelectString_ControlCursol(window, idxPtr, Choice_CHOICE3);
+}
+
+s32 mMsg_Main_Cursol_SetSelectString4_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetSelectString_ControlCursol(window, idxPtr, Choice_CHOICE4);
+}
+
+s32 mMsg_Main_Cursol_SetForceNext_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    mMsg_Set_ForceNext(window);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_PlayerName_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+    char* data = messageData->dataBuffer;
+
+    messageData->msgLen = mMsg_Set_PlayerNameColor(data, idxPtr, messageData->msgLen);
+    messageData->msgLen = mMsg_CopyPlayerName(data, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_TalkName_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen =
+        mMsg_CopyTalkName(window->clientActor, messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Tail_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen =
+        mMsg_CopyTail(window->clientActor, messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Year_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyYear(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Month_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyMonth(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Week_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyWeek(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Day_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyDay(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Hour_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyHour(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Min_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyMin(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Sec_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopySec(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Free(MessageWindow* window, s32 idx, s32 freeStrNo) {
+    MessageData* messageData = window->messageData;
+    s32 len = messageData->msgLen;
+
+    window->messageData->msgLen = mMsg_CopyFree(window, freeStrNo, messageData->dataBuffer, idx, len);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Free_cl(MessageWindow* window, s32* idxPtr, s32 freeStrNo, s32 colorId) {
+    if (colorId != 0) {
+        MessageData* messageData = window->messageData;
+        char* data = messageData->dataBuffer;
+
+        messageData->msgLen = mMsg_Set_PfColor(data, idxPtr, messageData->msgLen, window->freeStr[freeStrNo], colorId);
+    }
+
+    mMsg_Main_Cursol_PutString_Free(window, *idxPtr, freeStrNo);
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Free0_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR0);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free1_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free_cl(window, idxPtr, MESSAGE_FREE_STR1, window->freeStrColorIdx[0]);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free_cl(window, idxPtr, MESSAGE_FREE_STR2, window->freeStrColorIdx[1]);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free3_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR3);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free4_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR4);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free5_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free_cl(window, idxPtr, MESSAGE_FREE_STR5, window->freeStrColorIdx[2]);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free6_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR6);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free7_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR7);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free8_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR8);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free9_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR9);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free10_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR10);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free11_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR11);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free12_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR12);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free13_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR13);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free14_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR14);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free15_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR15);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free16_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR16);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free17_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR17);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free18_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR18);
+}
+
+s32 mMsg_Main_Cursol_PutString_Free19_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Free(window, *idxPtr, MESSAGE_FREE_STR19);
+}
+
+s32 mMsg_Main_Cursol_PutString_Determination_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+    s32 len = messageData->msgLen;
+
+    window->messageData->msgLen = mMsg_CopyDetermination(window, messageData->dataBuffer, *idxPtr, len);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_CountryName_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyCountryName(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_RamdomNumber2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    MessageData* messageData = window->messageData;
+
+    window->messageData->msgLen = mMsg_CopyRamdomNumber2(messageData->dataBuffer, *idxPtr, messageData->msgLen);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Item(MessageWindow* window, s32 idx, s32 itemStrNo) {
+    MessageData* messageData = window->messageData;
+    s32 len = messageData->msgLen;
+
+    window->messageData->msgLen = mMsg_CopyItem(window, itemStrNo, messageData->dataBuffer, idx, len);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Item0_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Item(window, *idxPtr, MESSAGE_ITEM_STR0);
+}
+
+s32 mMsg_Main_Cursol_PutString_Item1_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Item(window, *idxPtr, MESSAGE_ITEM_STR1);
+}
+
+s32 mMsg_Main_Cursol_PutString_Item2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Item(window, *idxPtr, MESSAGE_ITEM_STR2);
+}
+
+s32 mMsg_Main_Cursol_PutString_Item3_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Item(window, *idxPtr, MESSAGE_ITEM_STR3);
+}
+
+s32 mMsg_Main_Cursol_PutString_Item4_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Item(window, *idxPtr, MESSAGE_ITEM_STR4);
+}
+
+s32 mMsg_Main_Cursol_PutString_Mail(MessageWindow* window, s32 idx, s32 mailStrNo) {
+    MessageData* messageData = window->messageData;
+    s32 len = messageData->msgLen;
+
+    window->messageData->msgLen = mMsg_CopyMail(window, mailStrNo, messageData->dataBuffer, idx, len);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_PutString_Mail0_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_PutString_Mail(window, *idxPtr, MESSAGE_MAIL_STR0);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(MessageWindow* window, s32* idxPtr, s8 destiny) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    mDemo_Set_change_player_destiny(destiny);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny0_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 0);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny1_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 1);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 2);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny3_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 3);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny4_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 4);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny5_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 5);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny6_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 6);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny7_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 7);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny8_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 8);
+}
+
+s32 mMsg_Main_Cursol_SetPlayerDestiny9_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetPlayerDestiny_ControlCursol(window, idxPtr, 9);
+}
+
+s32 mMsg_Main_Cursol_SetMessageContents_ControlCursol(MessageWindow* window, s32* idxPtr, u8 status) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    mMsg_sound_MessageStatus(status);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetMessageContentsNormal_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetMessageContents_ControlCursol(window, idxPtr, MESSAGE_STATUS_NORMAL);
+}
+
+s32 mMsg_Main_Cursol_SetMessageContentsAngry_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetMessageContents_ControlCursol(window, idxPtr, MESSAGE_STATUS_ANGRY);
+}
+
+s32 mMsg_Main_Cursol_SetMessageContentsSad_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetMessageContents_ControlCursol(window, idxPtr, MESSAGE_STATUS_SAD);
+}
+
+s32 mMsg_Main_Cursol_SetMessageContentsFun_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetMessageContents_ControlCursol(window, idxPtr, MESSAGE_STATUS_FUN);
+}
+
+s32 mMsg_Main_Cursol_SetMessageContentsSleepy_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    return mMsg_Main_Cursol_SetMessageContents_ControlCursol(window, idxPtr, MESSAGE_STATUS_SLEEPY);
+}
+
+s32 mMsg_Main_Cursol_SetColorChar_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SoundCut_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    if (mMsg_Get_SoundCutCode(window, *idxPtr)) {
+        window->statusFlags &= ~0x1;
+    } else {
+        window->statusFlags |= 0x1;
+    }
+
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->endTextCursolIdx = *idxPtr;
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetLineOffset_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetLineType_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetCharScale_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_Button2_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    if (window->statusFlags & 0x8) {
+        window->statusFlags &= ~0x8;
+        *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+        window->endTextCursolIdx = *idxPtr;
+        window->statusFlags |= 0x2;
+
+        return 1;
+    } else {
+        window->statusFlags |= 0x8;
+        window->endTextCursolIdx = *idxPtr;
+
+        return 2;
+    }
+}
+
+s32 mMsg_Main_Cursol_BgmMake_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    s32 bgmNum;
+    s32 stopType;
+
+    mMsg_Get_bgm_make(window, *idxPtr, &bgmNum, &stopType);
+    mMsg_sound_bgm_make(bgmNum, stopType);
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->endTextCursolIdx = *idxPtr;
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_BgmDelete_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    s32 bgmNum;
+    s32 stopType;
+
+    mMsg_Get_bgm_delete(window, *idxPtr, &bgmNum, &stopType);
+    mMsg_sound_bgm_delete(bgmNum, stopType);
+
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->endTextCursolIdx = *idxPtr;
+
+    return 0;
+}
+s32 mMsg_Main_Cursol_MsgTimeEnd_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    window->endTextCursolIdx = *idxPtr;
+
+    if ((window->statusFlags & 0x8)) {
+        s32 time = mMsg_Get_MsgTimeEnd_time(window, *idxPtr);
+
+        if (time > 0) {
+            time--;
+        }
+
+        window->endTimer = (time << 1) + 1;
+        window->statusFlags &= ~0x8;
+        return 1;
+    } else {
+        window->statusFlags |= 0x8;
+        return 2;
+    }
+}
+
+s32 mMsg_Main_Cursol_SoundTrgSys_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    s32 seNo;
+
+    mMsg_Get_sound_trg_sys(window, *idxPtr, &seNo);
+    mMsg_sound_sound_trg_sys(seNo);
+
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->endTextCursolIdx = *idxPtr;
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SetLineScale_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SoundNoPage_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    window->statusFlags |= 0x2;
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_VoiceTrue_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    mMsg_sound_spec_change_true(window);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_VoiceFalse_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    mMsg_sound_spec_change_false(window);
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_SelectNoB_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+    mChoice_no_b_set(mChoice_Get_base_window_p());
+
+    return 0;
+}
+
+s32 mMsg_Main_Cursol_GiveOpen_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    if (mMsg_Check_give_item() != FALSE) {
+        *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+        window->endTextCursolIdx = *idxPtr;
+
+        return 0;
+    } else {
+        window->endTextCursolIdx = *idxPtr;
+
+        return 2;
+    }
+}
+
+s32 mMsg_Main_Cursol_GiveClose_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    if (mMsg_Check_give_item() == FALSE) {
+        *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
+        window->endTextCursolIdx = *idxPtr;
+
+        return 0;
+    } else {
+        window->endTextCursolIdx = *idxPtr;
+
+        return 2;
+    }
+}
+
+typedef s32 (*MessageCursolProc)(MessageWindow* window, s32* idxPtr);
+
+s32 mMsg_Main_Cursol_Proc_ControlCursol(MessageWindow* window, s32* idxPtr) {
+    char* data = window->messageData->dataBuffer;
+    char code = data[*idxPtr];
+
+    if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        static MessageCursolProc proc[] = {
+            NULL,
+        };
+
+        s32 type = data[*idxPtr + 1];
+
+        if (type < 0 || type >= 0x61 || proc[type] == NULL) {
+            return 0;
+        } else {
+            return proc[type](window, idxPtr);
+        }
+    } else {
+        return 0;
+    }
+}
+
+s32 mMsg_Main_Cursol_ControlCursol(MessageWindow* window) {
+    s32 endTextCursol;
+    s32 idx;
+    f32* cursolTimer;
+    s32 choiceHidden;
+    s32 res;
+    char code;
+
+    endTextCursol = window->endTextCursolIdx;
+    idx = endTextCursol;
+    cursolTimer = &window->cursolTimer;
+    choiceHidden = mChoice_check_main_index(&window->choiceWindow) == Choice_MAIN_INDEX_DISAPPEAR;
+    res = TRUE;
+
+    if (chkTrigger(B_BUTTON)) {
+        window->statusFlags |= 0x100;
+    }
+
+    if (mMsg_Check_CancelOrder(window)) {
+        window->cancelFlag = TRUE;
+    }
+
+    if (window->cancelFlag) {
+        *cursolTimer = 0.0f;
+    } else if ((window->statusFlags & 0x100)) {
+        *cursolTimer = 0.0f;
+    } else {
+        (*cursolTimer) -= 1.0f;
+
+        if (*cursolTimer <= 0.0f) {
+            *cursolTimer = 0.0f;
+        }
+    }
+
+    if (choiceHidden) {
+        if (window->hideChoiceWindowTimer > 0) {
+            window->hideChoiceWindowTimer--;
+        }
+    } else {
+        window->hideChoiceWindowTimer = 3;
+    }
+
+    mMsg_Unset_NowUtter(window);
+
+    if ((*cursolTimer <= 0.0f) && choiceHidden) {
+        while (TRUE) {
+            code = window->messageData->dataBuffer[idx];
+
+            if (mMsg_Check_CancelOrder(window)) {
+                window->cancelFlag = TRUE;
+            } else if (code == MESSAGE_CHAR_NEW_LINE) {
+                idx += mMsg_Set_SizeCode(window, idx);
+                window->nowDisplayLine++;
+            } else if (code == MESSAGE_CHAR_TAG_CODE) {
+                idx += mMsg_Set_SizeCode(window, idx);
+            } else if (mMsg_Main_Cursol_Check_ControlCursol(window, idx)) {
+                s32 procRes = mMsg_Main_Cursol_Proc_ControlCursol(window, &idx);
+
+                if (procRes == 1) {
+                    if (window->hideChoiceWindowTimer == 0) {
+                        mMsg_sound_voice_endcode_set(window);
+                    }
+
+                    res = FALSE;
+                    break;
+                } else if (procRes == 2) {
+                    break;
+                } else {
+                }
+            } else {
+                s32 idxTmp = idx;
+
+                idx += mMsg_Set_SizeCode(window, idxTmp);
+                window->endTextCursolIdx = idx;
+                mMsg_sound_MessageSpeedClear();
+
+                if (window->cancelFlag == FALSE) {
+                    if (mMsg_sound_CodeVoice(window, idxTmp)) {
+                        mMsg_Set_NowUtter(window);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+void mMsg_request_main_index_fromCursol(MessageWindow* window, s32 processing) {
+    if (processing == FALSE) {
+        mMsg_request_main_normal(window, FALSE, 5);
+    }
+}
+
+void mMsg_Main_Cursol(MessageWindow* window, Game_Play* play) {
+    s32 processing = mMsg_Main_Cursol_ControlCursol(window);
+
+    mMsg_request_main_index_fromCursol(window, processing);
+    mMsg_MainSetup_Window(window, play);
+
+    if (window->mainIndex != MESSAGE_MAIN_INDEX_CURSOL) {
+        window->statusFlags &= ~0x100;
+    }
+}
+
+void mMsg_MainSetup_Cursol(MessageWindow* window, Game_Play* play) {
+    MessageRequestCursolData* requestData = &window->requestData.cursolData;
+    s32 waitFlag = requestData->waitFlag;
+
+    window->mainIndex = MESSAGE_MAIN_INDEX_CURSOL;
+    window->drawFlag = TRUE;
+    window->requestedMainIndex = -1;
+    window->requestedPriority = 4;
+    window->endTimer = 0;
+    window->statusFlags &= ~0x8;
+
+    if (waitFlag != TRUE) {
+        window->showContinueButton = FALSE;
+    }
+
+    window->hideChoiceWindowTimer = 0;
+}
+
+s32 mMsg_Main_Disappear_SetScale(MessageWindow* window, Game_Play* play) {
+    if (window->timer < 9.0f) {
+        f32 scale;
+
+        window->timer += 1.0f;
+        scale = 1.0f - get_percent_forAccelBrake(window->timer, 0.0f, 9.0f, 0.0f, 0.0f);
+        window->windowScale = scale;
+        window->textScale = scale;
+        return FALSE;
+    } else {
+        window->windowScale = 0.0f;
+        window->textScale = 0.0f;
+        window->timer = 0.0f;
+        return TRUE;
+    }
+}
+
+void mMsg_request_main_index_fromDisappear(MessageWindow* window, s32 scaleDownFlag) {
+    if (scaleDownFlag) {
+        mMsg_Change_request_main_index(window, MESSAGE_MAIN_INDEX_HIDE, 5);
+    }
+}
+
+void mMsg_Main_Disappear(MessageWindow* window, Game_Play* play) {
+    s32 scaleDownFlag = mMsg_Main_Appear_SetScale(window, play);
+
+    mMsg_request_main_index_fromDisappear(window, scaleDownFlag);
+    mMsg_MainSetup_Window(window, play);
+}
+
+void mMsg_MainSetup_Disappear(MessageWindow* window, Game_Play* play) {
+    mMsg_sound_spec_change_scene(window);
+    window->mainIndex = MESSAGE_MAIN_INDEX_DISAPPEAR;
+    window->drawFlag = TRUE;
+    window->windowScale = 1.0f;
+    window->textScale = 1.0f;
+    window->timer = 0.0f;
+    window->showContinueButton = FALSE;
+
+    if (mDemo_Get_use_zoom_sound()) {
+        if (mDemo_Get_camera() == FALSE) {
+            mMsg_sound_ZOOMDOWN_SHORT();
+        } else {
+            mMsg_sound_ZOOMDOWN_LONG();
+        }
+    }
+
+    window->requestedMainIndex = -1;
+    window->requestedPriority = 4;
+}
+
+void mMsg_request_main_index_fromAppear_wait(MessageWindow* window, Game_Play* play, s32 scalingDoneFlag) {
+    if (scalingDoneFlag) {
+        MessageMainWaitAppearData* appearWaitData = &window->mainData.appearWaitData;
+        s32 lastMainIndex = appearWaitData->lastMainIndex;
+
+        if (lastMainIndex == MESSAGE_MAIN_INDEX_CURSOL) {
+            if (mMsg_request_main_cursol(window, TRUE, 5)) {}
+        } else {
+            mMsg_request_main_normal(window, TRUE, 5);
+        }
+    }
+}
+
+void mMsg_Main_Appear_wait(MessageWindow* window, Game_Play* play) {
+    s32 scalingFinished;
+
+    if ((window->statusFlags & 0x4) == FALSE) {
+        window->statusFlags |= 0x4;
+        mMsg_sound_ZOOMUP();
+        mMsg_sound_spec_change_voice(window);
+        mMsg_sound_voice_mode(window);
+    }
+
+    scalingFinished = mMsg_Main_Appear_SetScale(window, play);
+    mMsg_request_main_index_fromAppear_wait(window, play, scalingFinished);
+    mMsg_MainSetup_Window(window, play);
+}
+
+void mMsg_MainSetup_Appear_Wait(MessageWindow* window, Game_Play* play) {
+    MessageRequestAppearWaitData* reqAppearWaitData = &window->requestData.appearWaitData;
+    MessageMainWaitAppearData* appearWaitData = &window->mainData.appearWaitData;
+
+    if ((reqAppearWaitData->setupFlag & 1)) {
+        mMsg_Clear_CursolIndex(window);
+    }
+
+    appearWaitData->lastMainIndex = reqAppearWaitData->lastMainIndex;
+    window->mainIndex = MESSAGE_MAIN_INDEX_APPEAR_WAIT;
+    window->drawFlag = TRUE;
+    window->windowScale = 0.0f;
+    window->textScale = 0.0f;
+    window->timer = 0.0f;
+    window->statusFlags &= ~0x4;
+    window->requestedMainIndex = -1;
+    window->requestedPriority = 4;
+}
+
+void mMsg_Main_Wait(MessageWindow* window, Game_Play* play) {
+    mMsg_MainSetup_Window(window, play);
+}
+
+void mMsg_MainSetup_Wait(MessageWindow* window, Game_Play* play) {
+    MessageRequestWaitData* reqWaitData = &window->requestData.waitData;
+    MessageMainWaitData* waitData = &window->mainData.waitData;
+
+    waitData->lastMainIndex = reqWaitData->lastMainIndex;
+    window->mainIndex = MESSAGE_MAIN_INDEX_WAIT;
+    window->drawFlag = FALSE;
+    window->windowScale = 0.0f;
+    window->textScale = 0.0f;
+    window->timer = 0.0f;
+    window->requestedMainIndex = -1;
+    window->requestedPriority = 4;
+}
+
+void mMsg_request_main_index_fromDisappear_wait(MessageWindow* window, s32 scalingDoneFlag) {
+    if (scalingDoneFlag) {
+        MessageMainWaitDisappearData* disappearWaitData = &window->mainData.disappearWaitData;
+        s32 lastMainIndex = disappearWaitData->lastMainIndex;
+
+        mMsg_request_main_wait(window, lastMainIndex, 5);
+    }
+}
+
+void mMsg_Main_Disappear_wait(MessageWindow* window, Game_Play* play) {
+    s32 scalingFinished;
+
+    scalingFinished = mMsg_Main_Disappear_SetScale(window, play);
+    mMsg_request_main_index_fromDisappear_wait(window, scalingFinished);
+    mMsg_MainSetup_Window(window, play);
+}
+
+void mMsg_MainSetup_Disappear_wait(MessageWindow* window, Game_Play* play) {
+    MessageRequestDisappearWaitData* reqDisappearWaitData = &window->requestData.disappearWaitData;
+    MessageMainWaitDisappearData* appearWaitData = &window->mainData.disappearWaitData;
+
+    appearWaitData->lastMainIndex = reqDisappearWaitData->lastMainIndex;
+    window->mainIndex = MESSAGE_MAIN_INDEX_DISAPPEAR_WAIT;
+    window->drawFlag = TRUE;
+    window->windowScale = 1.0f;
+    window->textScale = 1.0f;
+    window->timer = 0.0f;
+    mMsg_sound_ZOOMDOWN_SHORT();
+    window->requestedMainIndex = -1;
+    window->requestedPriority = 4;
+}
+
+void mMsg_SetMatrix(MessageWindow* window, Game_Play* play, s32 mode) {
+    GraphicsContext* graph = play->state.gfxCtx;
+    f32 scale = window->windowScale;
+    f32 centerX = (window->centerX - ((f32)SCREEN_WIDTH * 0.5f)) * 16.0f;
+    f32 centerY = (-window->centerY + ((f32)SCREEN_HEIGHT * 0.5f)) * 16.0f;
+
+    Matrix_push();
+    Matrix_translate(centerX, centerY, 0.0f, 1);
+    Matrix_scale(scale, scale, scale, 1);
+
+    OPEN_DISPS(graph);
+
+    if (mode == 1) {
+        gSPMatrix(FONT_DISP++, _Matrix_to_Mtx_new(graph), G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+    } else {
+        gSPMatrix(POLY_OPA_DISP++, _Matrix_to_Mtx_new(graph), G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+    }
+
+    CLOSE_DISPS(graph);
+}
+
+void mMsg_UnSetMatrix() {
+    Matrix_pull();
+}
+
+void mMsg_DrawNameWindow(MessageWindow* window, Game_Play* play, s32 mode) {
+    GraphicsContext* graph = play->state.gfxCtx;
+
+    OPEN_DISPS(graph);
+
+    if (mode == 1) {
+        gDPSetPrimColor(FONT_DISP++, 0, 255, window->nameBackgroundColor.r, window->nameBackgroundColor.g,
+                        window->nameBackgroundColor.b, 255);
+        gSPDisplayList(FONT_DISP++, con_kaiwaname_modelT);
+    } else {
+        gDPSetPrimColor(POLY_OPA_DISP++, 0, 255, window->nameBackgroundColor.r, window->nameBackgroundColor.g,
+                        window->nameBackgroundColor.b, 255);
+        gSPDisplayList(POLY_OPA_DISP++, con_kaiwaname_modelT);
+    }
+
+    CLOSE_DISPS(graph);
+}
+
+void mMsg_DrawWindowClientName(MessageWindow* window, Game_Play* play, s32 mode) {
+    char name[ANIMAL_NAME_LEN];
+
+    mNpc_GetNpcWorldName(name, (Npc*)window->clientActor);
+#ifndef AF_CN
+    mFont_SetLineStrings_AndSpace(&play->state, name, window->clientNameLen, window->nameplateX, window->nameplateY,
+                                  window->nameTextColor.r, window->nameTextColor.g, window->nameTextColor.b,
+                                  window->nameTextColor.a, FALSE, FALSE, TRUE, 1.0f, 1.0f, mode);
+#else
+    if (window->textScale == 1.0f) {
+        mFont_SetLineStrings_AndSpace(&play->state, name, window->clientNameLen, window->nameplateX,
+                                      window->nameplateY + 68.0f, window->nameTextColor.r, window->nameTextColor.g,
+                                      window->nameTextColor.b, window->nameTextColor.a);
+    }
+#endif
+}
+
+void mMsg_DrawWindowTurnButton(MessageWindow* window, Game_Play* play, s32 mode) {
+    if (window->showContinueButton != FALSE && window->lockContinue == FALSE) {
+        mFont_SetMarkChar(&play->state, 3, 257.0f, 136.0f, window->continueButtonColor.r, window->continueButtonColor.g,
+                          window->continueButtonColor.b, window->continueButtonColor.a, FALSE, 1.0f, 1.0f, mode);
+    }
+}
+;
+
+void mMsg_DrawWindowBody(MessageWindow* window, Game_Play* play, s32 mode) {
+    GraphicsContext* graph = play->state.gfxCtx;
+    Color_RGBA8* windowBackgroundColor = &window->windowBackgroundColor;
+    OPEN_DISPS(graph);
+
+    if (mode == 1) {
+        gSPDisplayList(FONT_DISP++, mMsg_init_disp);
+        gDPSetPrimColor(FONT_DISP++, 0, 255, windowBackgroundColor->r, windowBackgroundColor->g,
+                        windowBackgroundColor->b, windowBackgroundColor->a);
+        gSPDisplayList(FONT_DISP++, con_kaiwa2_modelT);
+
+        if (window->showActorName) {
+            mMsg_DrawNameWindow(window, play, mode);
+            mMsg_DrawWindowClientName(window, play, mode);
+        }
+
+        mMsg_DrawWindowTurnButton(window, play, mode);
+    } else {
+        gSPDisplayList(POLY_OPA_DISP++, mMsg_init_disp);
+        gDPSetPrimColor(POLY_OPA_DISP++, 0, 255, windowBackgroundColor->r, windowBackgroundColor->g,
+                        windowBackgroundColor->b, windowBackgroundColor->a);
+        gSPDisplayList(POLY_OPA_DISP++, con_kaiwa2_modelT);
+
+        if (window->showActorName) {
+            mMsg_DrawNameWindow(window, play, mode);
+            mMsg_DrawWindowClientName(window, play, mode);
+        }
+
+        mMsg_DrawWindowTurnButton(window, play, mode);
+    }
+    CLOSE_DISPS(graph);
+}
+
+void mMsg_draw_font(MessageWindow* window, Game_Play* play) {
+    FontSentence sentence;
+    char* lastPtr = &window->messageData->dataBuffer[window->endTextCursolIdx];
+    char* startPtr = &window->messageData->dataBuffer[window->startTextCursolIdx];
+    s32 lineNum;
+    char* curPtr;
+    char code;
+    char contType;
+    s32 len;
+    s32 lineLen;
+    s32 totalLen;
+    xy_t scale;
+    xy_t pos;
+    Gfx* __font_gfx;
+    s32 lineEndFlag;
+    u32 sentenceFlags;
+    s32 sentenceFinishedFlag;
+
+    s32 senteceVoiceIdx = window->voiceSfxIdx - window->startTextCursolIdx;
+
+    if (fabsf(window->textScale) < 0.001f) {
+        return;
+    }
+
+    OPEN_DISPS(play->state.gfxCtx);
+    __font_gfx = FONT_DISP;
+
+    sentenceFinishedFlag = FALSE;
+
+    scale.x = window->textScale;
+    scale.y = window->textScale;
+
+    pos.x = window->centerX - (96.0f * scale.x);
+#ifndef AF_CN
+    pos.y = window->centerY - (32.0f * scale.y);
+#else
+    pos.y = window->centerY - (24.0f * scale.y);
+#endif
+    lineNum = 0;
+    totalLen = 0;
+
+    while (lineNum < window->textLines && sentenceFinishedFlag == FALSE) {
+        for (lineLen = 0, curPtr = startPtr, lineEndFlag = FALSE; curPtr < lastPtr && lineEndFlag == FALSE;
+             len = mFont_CodeSize_get(curPtr), curPtr += len, lineLen += len) {
+            code = curPtr[0];
+
+            if (code == MESSAGE_CHAR_NEW_LINE) {
+                lineEndFlag = TRUE;
+            } else if (code == MESSAGE_CHAR_CONTROL_CODE) {
+                contType = curPtr[1];
+                if (contType == 0 || contType == 1 || contType == 0x58) {
+                    lineEndFlag = TRUE;
+                    sentenceFinishedFlag = TRUE;
+                }
+            }
+        }
+
+        if (curPtr >= lastPtr) {
+            sentenceFinishedFlag = TRUE;
+        }
+
+        if (lineNum == 0) {
+            sentenceFlags = 0x40;
+        } else {
+            sentenceFlags = 0x58;
+        }
+
+        if (window->statusFlags & 0x20 && senteceVoiceIdx >= totalLen && senteceVoiceIdx < (totalLen + lineLen)) {
+            sentenceFlags |= 0x80;
+        }
+
+        mFontSentence_set(&sentence, startPtr, lineLen, sentenceFlags, &pos, 0, &scale, &window->fontColor[lineNum],
+                          senteceVoiceIdx - totalLen, window->voiceIdx, window->animalVoiceIdx);
+
+        mFontSentence_gppDraw(&sentence, play, &__font_gfx);
+
+#ifndef AF_CN
+
+        pos.y += 16.0f * scale.y;
+#else
+        pos.y += 12.0f * scale.y;
+
+#endif
+        startPtr = curPtr;
+        lineNum++;
+        totalLen += lineLen;
+    }
+
+    FONT_DISP = __font_gfx;
+    CLOSE_DISPS(play->state.gfxCtx);
+    window->statusFlags &= ~0x20;
+}
+
+typedef void (*MessageMainProc)(MessageWindow* window, Game_Play* play);
+
+void mMsg_MainSetup_Window(MessageWindow* window, Game_Play* play) {
+    static MessageMainProc proc[] = {
+        &mMsg_MainSetup_Hide,      &mMsg_MainSetup_Appear,      &mMsg_MainSetup_Normal, &mMsg_MainSetup_Cursol,
+        &mMsg_MainSetup_Disappear, &mMsg_MainSetup_Appear_Wait, &mMsg_MainSetup_Wait,   &mMsg_MainSetup_Disappear_wait,
+    };
+
+    s32 idx = window->requestedMainIndex;
+
+    if (idx >= 0) {
+        if (idx >= MESSAGE_MAIN_INDEX_MAX || proc[idx] == NULL) {
+            return;
+        }
+
+        proc[idx](window, play);
+    }
+}
+
+void mMsg_Main_Window(MessageWindow* window, Game_Play* play) {
+    static MessageMainProc proc[] = {
+        &mMsg_Main_Hide,      &mMsg_Main_Appear,      &mMsg_Main_Normal, &mMsg_Main_Cursol,
+        &mMsg_Main_Disappear, &mMsg_Main_Appear_wait, &mMsg_Main_Wait,   &mMsg_Main_Disappear_wait,
+    };
+
+#ifndef AF_CN
+    s32 idx;
+#else
+    u32 idx;
+#endif
+
+    idx = window->mainIndex;
+
+    if (idx >= 0) {
+        if (idx >= MESSAGE_MAIN_INDEX_MAX || proc[idx] == NULL) {
+            return;
+        }
+
+        proc[idx](window, play);
+    }
+}
+
+void mMsg_Draw_Window(MessageWindow* window, Game_Play* play) {
+    if (window->drawFlag && window->dataLoaded) {
+        mFont_SetMatrix(play->state.gfxCtx, 1);
+        mMsg_SetMatrix(window, play, 1);
+        mMsg_DrawWindowBody(window, play, 1);
+        mMsg_UnSetMatrix();
+        mFont_UnSetMatrix(play->state.gfxCtx, 1);
+
+        if (window->messageData->dataLoaded) {
+            mMsg_draw_font(window, play);
+        }
+
+        mChoice_Draw(&window->choiceWindow, play, 1);
+    }
+}
+
+void mMsg_ct(Game_Play* play) {
+    mMsg_init(play);
+    mChoice_ct(&mMsg_window.choiceWindow, play);
+}
+
+void mMsg_dt(Game_Play* play) {
+    mChoice_dt(&mMsg_window.choiceWindow, play);
+}
+
+void mMsg_debug_draw(gfxprint* gfxprint) {
+    if (mMsg_window.messageData != NULL) {
+        gfxprint_color(gfxprint, 245, 255, 250, 255);
+        gfxprint_locate8x8(gfxprint, 3, 6);
+        gfxprint_printf(gfxprint, "%5d", mMsg_window.messageData->msgNo);
+    }
+}
+
+void mMsg_Main(Game_Play* play) {
+    mMsg_Main_Window(&mMsg_window, play);
+    mChoice_Main(&mMsg_window.choiceWindow, play);
+}
+void mMsg_Draw(Game_Play* play) {
+    mMsg_Draw_Window(&mMsg_window.choiceWindow, play);
+}
+
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/mMsm_ClearRecord.s")
+
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3420_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A345C_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A34E8_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A35C8_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3658_jp.s")
+
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/mMsm_SendInformationMail.s")
+
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3784_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A37D0_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3810_jp.s")
+
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3A5C_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3B84_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3C18_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3CF0_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3E34_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3F70_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A3FB4_jp.s")
+
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4184_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A41BC_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4254_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A43C0_jp.s")
+
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4448_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A44D4_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4508_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A456C_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4614_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A46F0_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A49E8_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4A84_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4B00_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4D10_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4DC8_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4E74_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4F38_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A4FD0_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A50AC_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A518C_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A524C_jp.s")
+#pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/func_800A5460_jp.s")

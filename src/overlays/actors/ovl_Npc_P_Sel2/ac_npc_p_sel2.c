@@ -1,5 +1,6 @@
 #include "ac_npc_p_sel2.h"
 #include "m_lib.h"
+#include "m_choice_main.h"
 #include "m_actor_dlftbls.h"
 #include "m_object.h"
 #include "overlays/gamestates/ovl_play/m_play.h"
@@ -73,9 +74,66 @@ ActorProfile Npc_P_Sel2_Profile = {
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_P_Sel2/ac_npc_p_sel2/func_809BF12C_jp.s")
 
-#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_P_Sel2/ac_npc_p_sel2/func_809BF1E8_jp.s")
+//#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_P_Sel2/ac_npc_p_sel2/func_809BF1E8_jp.s")
 
-#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_P_Sel2/ac_npc_p_sel2/func_809BF244_jp.s")
+//#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_P_Sel2/ac_npc_p_sel2/func_809BF244_jp.s")
+
+//aNPS2_copy_hokanohito
+void func_809BF1E8_jp(Npc_P_Sel2* p_sel2, u8* str) {
+    Choice* choice_win = mChoice_Get_base_window_p();
+ 
+    mChoice_Load_ChoseStringFromRom((s32)choice_win, (char*)(str + 2 * Choice_CHOICE_STRING_LEN), 0x1B9, (Actor*)p_sel2);
+    mChoice_Load_ChoseStringFromRom((s32)choice_win, (char*)(str + 3 * Choice_CHOICE_STRING_LEN), 0x29, (Actor*)p_sel2);
+}
+
+extern u8 D_809C0C38_jp[4];
+extern void func_809BF070_jp(void* strBuf, void* strPArray, s32 type);
+
+
+//aNPS2_select_card_player_init
+void func_809BF244_jp(Npc_P_Sel2* p_sel2, volatile s32 useFixedBytes) {
+    Choice* choice_win = mChoice_Get_base_window_p();
+    u8 str[Choice_CHOICE_STRING_LEN * Choice_CHOICE_MAX];
+    u8* str_p[Choice_CHOICE_MAX];
+    s32 next_choice_idx = p_sel2->card_player_next_choice_idx;
+    s32 i;
+    u8* p;
+    
+
+    mem_clear(str, sizeof(str), 0x20); //CHAR_SPACE
+    for (i = 0; i < Choice_CHOICE_MAX; i++) {
+        str_p[i] = NULL;
+    }
+
+    switch (next_choice_idx) {
+    case 1:
+    case 2:
+    case 3:
+        func_809BF070_jp(str, str_p, next_choice_idx);
+
+        if (useFixedBytes == 0) {
+            p = str + next_choice_idx * Choice_CHOICE_STRING_LEN;
+            mChoice_Load_ChoseStringFromRom(choice_win, p, Choice_CHOICE_STRING_LEN * Choice_CHOICE_MAX, (Actor*)p_sel2);
+        } else {
+            p = str + next_choice_idx * Choice_CHOICE_STRING_LEN;
+            mem_copy(p,D_809C0C38_jp,4);
+        }
+    
+        str_p[next_choice_idx] = p;
+        break;
+    
+    case 4:
+        func_809BF070_jp(str, str_p, next_choice_idx);
+    }
+
+
+    mChoice_Set_choice_data(
+        choice_win,
+        str_p[0], Choice_CHOICE_STRING_LEN,
+        str_p[1], Choice_CHOICE_STRING_LEN,
+        str_p[2], Choice_CHOICE_STRING_LEN,
+        str_p[3], Choice_CHOICE_STRING_LEN);
+}
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_P_Sel2/ac_npc_p_sel2/func_809BF3E4_jp.s")
 
