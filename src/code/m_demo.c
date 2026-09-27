@@ -231,7 +231,7 @@ s32 change_camera(s32 cameraType) {
     Player* player = get_player_actor_withoutCheck((Game_Play*)gamePT);
     Camera2* camera = &((Game_Play*)gamePT)->camera;
 
-    if (cameraType == camera->unk60) {
+    if (cameraType == camera->now_main_index) {
         return FALSE;
     }
 

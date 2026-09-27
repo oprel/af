@@ -15,6 +15,8 @@ import struct
 import sys
 from pathlib import Path
 
+ITEM_NAME_LEN = 16
+
 # AF text format
 AF_CHAR_MAP = {
     0x00: 'あ', 0x01: 'い', 0x02: 'う', 0x03: 'え', 0x04: 'お',
@@ -233,7 +235,7 @@ AF_BANKS = {
     "ps_data":      (0x00D13000, 0x00D15000, None, None, None, None),
     "string_data":  (0x00D16000, 0x00D18000, None, None, None, None),
     "npc_name_str": (0x00E04000, None, None, 0x06, 0x08, 0xFF),
-    "item_1xxx":    (0x010F4000, None, None, 0x0A, 0x08, 0x11C3),
+    "item_1xxx":    (0x010F4000, None, None, ITEM_NAME_LEN, 0x08, 0x11C3),
 }
 AF_CARRIERS = {
     "dialogue": {"segment": "softsprite_matrix_static", "codeword": 0x01913000,

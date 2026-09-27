@@ -86,7 +86,7 @@ s32 eLL_get_light_sw_start_demo(void) {
 void eLL_ctrl_light_sw(Lamp_Light* this) {
     s32 var_v1 = 0;
 
-    switch (common_data.unk_10001) {
+    switch (common_data.field_type) {
         case 2:
         case 3:
             switch (mFI_GetFieldId()) {

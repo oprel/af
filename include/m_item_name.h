@@ -3,9 +3,8 @@
 
 #include "ultra64.h"
 
-#define ITEM_NAME_LEN 10
+#define ITEM_NAME_LEN 16
 
-// void func_80096710_jp();
-void mIN_copy_name_str(char*, u16);
+void mIN_copy_name_str(char*, u32);
 
 #endif

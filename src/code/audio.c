@@ -1,6 +1,6 @@
 #include "audio.h"
 #include "audio_load.h"
-#include "683030.h"
+#include "m_camera2.h"
 #include "71A140.h"
 #include "71FA20.h"
 #include "720B20.h"

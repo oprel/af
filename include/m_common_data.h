@@ -150,7 +150,7 @@ typedef struct Save {
 typedef struct CommonData {
     /* 0x00000 */ Save save;
     /* 0x10000 */ u8 unk_10000; // named "game_started" in AC GCN decomp
-    /* 0x10001 */ u8 unk_10001;
+    /* 0x10001 */ u8 field_type;
     /* 0x10002 */ u8 fieldDrawType;
     /* 0x10003 */ u8 playerNumber;
     /* 0x10004 */ s32 unk_10004; // named "last_scene_no" in AC GCN decomp

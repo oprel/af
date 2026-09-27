@@ -912,7 +912,7 @@ void mEnv_SetBaseLight(Kankyo* kankyo) {
                                   &l_mEnv_normal_kcolor_data[weather][(i + 1) % 8], percent);
             }
 
-            if (common_data.unk_10001 == 0) {
+            if (common_data.field_type == 0) {
                 fogEnabled = FALSE;
             }
 

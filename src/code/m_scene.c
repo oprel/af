@@ -161,7 +161,7 @@ s32 func_800C5D68_jp(ObjectExchangeBank* objectExchangeBank) {
     ObjectStatus* objectStatus;
     s32 res = objectExchangeBank->unk181C;
 
-    if (common_data.unk_10001 == 0) {
+    if (common_data.field_type == 0) {
         s32 i;
         objectStatus = &objectExchangeBank->status[objectExchangeBank->unk17FC];
         res = (objectExchangeBank->unk181C + 1) % 2;
@@ -322,7 +322,7 @@ void mSc_regist_initial_exchange_bank(Game_Play* game_play) {
         } while (i < game_play->unk_1EA7);
     }
 
-    if (common_data.unk_10001 == 0) {
+    if (common_data.field_type == 0) {
         u32 size = ((u32)(objectExchangeBank->unk1804 - objectExchangeBank->unk1800) / 2);
         s32 ram = ALIGN16(objectExchangeBank->unk1800 + size);
 

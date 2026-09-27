@@ -16,6 +16,7 @@
 #include "m_common_data.h"
 #include "m_lib.h"
 #include "m_view.h"
+#include "m_camera2.h"
 #include "m_lights.h"
 #include "m_collision_bg.h"
 #include "m_pause.h"
@@ -23,7 +24,6 @@
 #include "m_fbdemo_wipe1.h"
 #include "m_fbdemo_triforce.h"
 #include "m_scene.h"
-#include "683030.h"
 
 struct Actor;
 struct ActorEntry;

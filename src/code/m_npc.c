@@ -1516,7 +1516,7 @@ void mNpc_GetBirthdayPresent(u16* present) {
 }
 
 void mNpc_GetBirthdayCard(Mail_c* mail, PersonalID_c* pid, AnmPersonalID_c* anmId) {
-    char itemName[10];
+    char itemName[ITEM_NAME_LEN];
     s32 mailNo = 0xEA + anmId->looks * 3 + RANDOM(3);
     u16 present;
 
@@ -1525,7 +1525,7 @@ void mNpc_GetBirthdayCard(Mail_c* mail, PersonalID_c* pid, AnmPersonalID_c* anmI
     mHandbill_Set_free_str(1, Birthday_animal_name, ANIMAL_NAME_LEN);
     mNpc_GetBirthdayPresent(&present);
     mIN_copy_name_str(itemName, present);
-    mHandbill_Set_free_str(2, itemName, 10);
+    mHandbill_Set_free_str(2, itemName, ITEM_NAME_LEN);
     mNpc_LoadMailDataCommon2(mail, pid, anmId, present, mNpc_GetPaperType(), mailNo);
 }
 

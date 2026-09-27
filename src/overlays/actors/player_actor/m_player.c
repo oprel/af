@@ -5,6 +5,8 @@
 #include "m_room_type.h"
 #include "audio.h"
 #include "m_actor_dlftbls.h"
+#include "m_item_name.h"
+#include "m_msg_main.h"
 #include "m_field_info.h"
 #include "m_name_table.h"
 #include "m_scene_table.h"
@@ -2282,6 +2284,51 @@ void Player_actor_Item_main_other_func1(Actor* actor, Game* game) {
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CCF94_jp.s")
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CCFDC_jp.s")
+/*
+void func_808CCFDC_jp(Player* player) {
+    MessageWindow* window = mMsg_Get_base_window_p();
+    s32 msgNum = 0xA2C;
+ 
+    if ((player->unk_0E6C == 0) && (player->unk_0E68 != NULL)) {
+        s32 msgOffset = player->unk_0F24;
+ 
+        if (msgOffset < 0) {
+            msgOffset = 8;
+        }
+ 
+        if (player->nowMainIndex == 0x2C) {
+            msgNum = msgOffset + 0xA2C;
+ 
+            if (*(s32*)&player->mainIndexData.forceAlignment[0x4] != 0) {
+                char name[ITEM_NAME_LEN];
+ 
+                mIN_copy_name_str(name, *(u16*)((u8*)player->unk_0E68 + 0x21C));
+                mMsg_Set_item_str(window, 0, name, ITEM_NAME_LEN);
+                msgNum = 0xA4E;
+            }
+        }
+    }
+ 
+    mDemo_Set_msg_num(msgNum);
+    mDemo_Set_talk_display_name(0);
+    mDemo_Set_camera(5);
+    mDemo_Set_ListenAble();
+    func_8009E9E8_jp(player);
+ 
+    {
+        Color_RGBA8 windowColor;
+ 
+        windowColor.r = 0xB9;
+        windowColor.g = 0xF5;
+        windowColor.b = 0x50;
+        windowColor.a = 0xFF;
+        mDemo_Set_talk_window_color(&windowColor);
+    }
+ 
+    mChoice_Clear_ChoseNum(mChoice_Get_base_window_p());
+    mBGMPsComp_make_ps_fanfare(0x28, 0x168);
+}
+//*/
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CD0EC_jp.s")
 
@@ -2498,7 +2545,51 @@ void Player_actor_Item_main_other_func1(Actor* actor, Game* game) {
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CF8E4_jp.s")
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CF92C_jp.s")
-
+/*
+void func_808CF92C_jp(Player* player) {
+    MessageWindow* window = mMsg_Get_base_window_p();
+    s32 msgNum = 0x1327;
+    Actor* actor = player->fishingRodActor;
+ 
+    if (actor != NULL) {
+        s32 kind = *(s32*)((u8*)actor + 0x290);
+ 
+        if (kind >= 0 && kind < 0x20) {
+            msgNum = kind + 0x1327;
+ 
+            if (player->nowMainIndex == 0x37) {
+                if (*(s32*)&player->mainIndexData.forceAlignment[0x14] != 0) {
+                    u16 (*getItemKind)(Actor*) = *(u16(**)(Actor*))((u8*)actor + 0x214);
+                    char name[ITEM_NAME_LEN];
+ 
+                    mIN_copy_name_str(name, getItemKind(actor) & 0xFFFF);
+                    mMsg_Set_item_str(window, 0, name, ITEM_NAME_LEN);
+                    msgNum = 0x1349;
+                }
+            }
+        }
+    }
+ 
+    mDemo_Set_msg_num(msgNum);
+    mDemo_Set_talk_display_name(0);
+    mDemo_Set_camera(5);
+    mDemo_Set_ListenAble();
+    func_8009E9E8_jp(player);
+ 
+    {
+        Color_RGBA8 windowColor;
+ 
+        windowColor.r = 0xB9;
+        windowColor.g = 0xF5;
+        windowColor.b = 0x50;
+        windowColor.a = 0xFF;
+        mDemo_Set_talk_window_color(&windowColor);
+    }
+ 
+    mChoice_Clear_ChoseNum(mChoice_Get_base_window_p());
+    mBGMPsComp_make_ps_fanfare(0x28, 0x168);
+}
+//*/
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CFA54_jp.s")
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CFD10_jp.s")
@@ -2699,7 +2790,32 @@ void Player_actor_Item_main_other_func1(Actor* actor, Game* game) {
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808D2FBC_jp.s")
 
-#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808D307C_jp.s")
+void func_808D307C_jp(Player* player) {
+    MessageWindow* window = mMsg_Get_base_window_p();
+    char name[ITEM_NAME_LEN];
+ 
+    mIN_copy_name_str(name, player->mainIndexData.swingAxe.axeCommon.item);
+    mMsg_Set_item_str(window, 0, name, ITEM_NAME_LEN);
+ 
+    mDemo_Set_msg_num(0x17AF);
+    mDemo_Set_talk_display_name(0);
+    mDemo_Set_camera(5);
+    mDemo_Set_ListenAble();
+    func_8009E9E8_jp(player);
+ 
+    {
+        Color_RGBA8 windowColor;
+ 
+        windowColor.r = 0xB9;
+        windowColor.g = 0xF5;
+        windowColor.b = 0x50;
+        windowColor.a = 0xFF;
+        mDemo_Set_talk_window_color(&windowColor);
+    }
+ 
+    mChoice_Clear_ChoseNum(mChoice_Get_base_window_p());
+    mBGMPsComp_make_ps_fanfare(0x28, 0x168);
+}
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808D3134_jp.s")
 

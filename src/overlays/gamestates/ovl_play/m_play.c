@@ -12,10 +12,9 @@
 #include "6EC9E0.h"
 #include "m_time.h"
 #include "m_demo.h"
-#include "683030.h"
 #include "6E3240.h"
 #include "6C97F0.h"
-#include "6EFC20.h"
+#include "m_watch_my_step.h"
 #include "67D890.h"
 #include "6DA460.h"
 #include "6ECD90.h"
@@ -734,7 +733,7 @@ void Game_play_draw(Game_Play* game_play) {
     //! FAKE
 label:;
     func_80803810_jp(game_play, gfxCtx);
-    if (common_data.unk_10001 == 0) {
+    if (common_data.field_type == 0) {
         if (mEv_CheckTitleDemo() != -9) {
             sp2B = game_play->kankyo.baseLight.bgColor[0];
             sp2A = game_play->kankyo.baseLight.bgColor[1];

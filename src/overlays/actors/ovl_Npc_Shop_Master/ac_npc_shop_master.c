@@ -3,6 +3,7 @@
 #include "m_actor_dlftbls.h"
 #include "m_object.h"
 #include "overlays/gamestates/ovl_play/m_play.h"
+#include "m_item_name.h"
 
 void aNSM_actor_ct(Actor* thisx, Game_Play* game_play);
 void aNSM_actor_dt(Actor* thisx, Game_Play* game_play);
@@ -75,7 +76,16 @@ ActorProfile Npc_Shop_Master_Profile = {
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_Shop_Master/ac_npc_shop_master/func_809CAF58_jp.s")
 
-#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_Shop_Master/ac_npc_shop_master/func_809CAFAC_jp.s")
+//#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_Shop_Master/ac_npc_shop_master/func_809CAFAC_jp.s")
+
+//*
+void func_809CAFAC_jp(u16 itemNo, s32 strNo) {
+    char itemName[ITEM_NAME_LEN];
+
+    mIN_copy_name_str(itemName, itemNo);
+    mMsg_Set_item_str(mMsg_Get_base_window_p(), strNo, itemName, ITEM_NAME_LEN);
+}
+//*/
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_Npc_Shop_Master/ac_npc_shop_master/func_809CAFF4_jp.s")
 

@@ -3,6 +3,7 @@
 #include "m_actor_dlftbls.h"
 #include "m_object.h"
 #include "overlays/gamestates/ovl_play/m_play.h"
+#include "m_item_name.h"
 
 void aPOL2_actor_ct(Actor* thisx, Game_Play* game_play);
 void aPOL2_actor_dt(Actor* thisx, Game_Play* game_play);

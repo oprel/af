@@ -151,7 +151,11 @@ typedef struct Player {
     /* 0x0DE4 */ UNK_TYPE unk_0DE4[2];
     /* 0x0DEC */ UNK_TYPE1 unk_0DEC[0x44];
     /* 0x0E30 */ xyz_t netPos;
-    /* 0x0E3C */ UNK_TYPE1 unk_0E3C[0xEC];
+    /* 0x0E3C */ UNK_TYPE1 unk_0E3C[0x2C];
+    /* 0x0E68 */ void* unk_0E68; // pointer to some gift/present data; has a u16 item id at +0x21C
+    /* 0x0E6C */ u8 unk_0E6C;
+    /* 0x0E6D */ UNK_TYPE1 unk_0E6D[0xB7];
+    /* 0x0F24 */ s32 unk_0F24;
     /* 0x0F28 */ Actor* fishingRodActor;
     /* 0x0F2C */ UNK_TYPE1 unk_0F2C[0x20];
     /* 0x0F4C */ ClObjTris colliderTris1;

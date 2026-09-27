@@ -11,7 +11,7 @@
 #include "m_debug_display.h"
 #include "m_player_lib.h"
 #include "m_rcp.h"
-#include "683030.h"
+#include "m_camera2.h"
 #include "audio.h"
 #include "code_variables.h"
 #include "m_name_table.h"
