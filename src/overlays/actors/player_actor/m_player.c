@@ -13,6 +13,7 @@
 #include "m_debug.h"
 #include "m_demo.h"
 #include "m_bgm.h"
+#include "src/overlays/actors/ovl_Gyoei/ac_gyoei.h"
 
 extern ClObjPipe_Init Player_actor_OcInfoData_forStand;
 #if 0
@@ -2285,6 +2286,7 @@ void Player_actor_Item_main_other_func1(Actor* actor, Game* game) {
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CCFDC_jp.s")
 /*
+//Player_actor_Pull_net_demo_ct
 void func_808CCFDC_jp(Player* player) {
     MessageWindow* window = mMsg_Get_base_window_p();
     s32 msgNum = 0xA2C;
@@ -2546,15 +2548,16 @@ void func_808CCFDC_jp(Player* player) {
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808CF92C_jp.s")
 /*
+//Player_actor_Notice_rod_demo_ct
 void func_808CF92C_jp(Player* player) {
     MessageWindow* window = mMsg_Get_base_window_p();
     s32 msgNum = 0x1327;
-    Actor* actor = player->fishingRodActor;
+    Actor* actor = player->fishingRodActor; //todo: create specific fishing rod actor
  
     if (actor != NULL) {
         s32 kind = *(s32*)((u8*)actor + 0x290);
  
-        if (kind >= 0 && kind < 0x20) {
+        if (kind >= aGYO_TYPE_CRUCIAN_CARP && kind < aGYO_TYPE_NUM) {
             msgNum = kind + 0x1327;
  
             if (player->nowMainIndex == 0x37) {
@@ -2790,6 +2793,8 @@ void func_808CF92C_jp(Player* player) {
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/player_actor/m_player/func_808D2FBC_jp.s")
 
+//axe breaking?
+//Player_actor_Get_scoop_demo_ct
 void func_808D307C_jp(Player* player) {
     MessageWindow* window = mMsg_Get_base_window_p();
     char name[ITEM_NAME_LEN];
