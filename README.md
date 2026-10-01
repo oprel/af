@@ -1,88 +1,30 @@
-# Animal Forest [![Build Status][gha-badge]][gha] ![Code jp Progress] [![Discord Channel][discord-badge]][discord]
+# Animal Forest - English Translation
 
-[gha]: https://github.com/zeldaret/af/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush
-[gha-badge]: https://img.shields.io/github/actions/workflow/status/zeldaret/af/ci.yml
+This is a work-in-progress translation project for the Nintendo 64 game *Animal Forest*, also known as どうぶつの森 (*Doubutsu no Mori*). It is based on the previous work by [ZoinKity](https://www.romhacking.net/translations/1581/) and the [partial decomp of Animal Forest](https://github.com/zeldaret/af). Since Animal Crossing for the Nintendo Gamecube contains an official translation of almost all of the lines in Animal Forest, we are porting those English lines over to the N64 original.
 
-[Code jp Progress]: https://img.shields.io/endpoint?label=Code%20jp&url=https%3A%2F%2Fprogress.deco.mp%2Fdata%2Fanimalforest%2Fjp%2Fcode%2F%3Fmode%3Dshield%26measure%3Dall
+## Translation Progress
+All strings inside the text banks that have an equivalent in Animal Crossing have been [matched](https://github.com/oprel/af/blob/main/link_sheet.csv) (19,500 out of ~20,000 strings/dialogues). Some might need fixing to reflect the functionality of Animal Forest.
 
-[discord]: https://discord.zelda.deco.mp/
-[discord-badge]: https://img.shields.io/discord/688807550715560050?color=%237289DA&logo=discord&logoColor=%23FFFFFF
+### To-do
+- [ ] Allow for item names up to 16 characters long.
+- [ ] Default to English character input during text input.
+- [ ] Translate lines related to the N64 Controller Pak.
+- [ ] Inject translated sprites from ZoinKity translation
+- [ ] Fix the way time/date are displayed.
+- [ ] Fix crash related to mail being longer.
+- [ ] Locate and translate Japanese strings not present in the text banks.
 
-This is a work-in-progress decompilation project for the Nintendo 64 game *Animal Forest*, also known as どうぶつの森 (*Doubutsu no Mori*).
-There is a decompilation project for the GameCube versions (*Animal Crossing*, etc.) [here](https://github.com/Prakxo/ac-decomp/).
+### Done
+- [x] Extract English text from Animal Crossing (Gamecube).
+- [x] Inject English text into banks.
+  - Dialogue
+  - Items
+  - Character Names
+  - Mail
+  - Misc.
+- [x] Support for longer choice strings in dialogue.
+- [x] Variable width font.
 
-```diff
-- WARNING! -
 
-This repository is a work in progress, and while it can be used to make certain changes, it's 
-still constantly evolving. If you wish to use it for modding purposes in its current state,
-please be aware that the codebase could drastically change at any time. Also note that some
-parts of the ROM may not be 'shiftable' yet, so modifying them could currently be difficult.
-```
-
-**Note:** this project is *not* a port, to PC or any other platform.
-It takes a Nintendo 64 rom, extracts assets from it, and combines them with C code we reverse-engineered from the rom, to produce an identical rom.
-It is explicitly a non-goal for this project to be used as basis for a port, or to be used for any commercial purpose.
-
-## Setup
-
-### Linux
-
-#### 1. Install build dependencies
-
-The build process has the following package requirements:
-
-* make
-* git
-* build-essential
-* clang
-* binutils-mips-linux-gnu
-* python3
-* python3-pip
-* python3-venv
-
-Under Debian / Ubuntu (which we recommend using), you can install them with the following commands:
-
-```bash
-sudo apt update
-sudo apt install make git build-essential clang binutils-mips-linux-gnu python3 python3-pip python3-venv
-```
-
-#### 2. Install python dependencies
-
-The build process has a few python packages required that are located in `requirements.txt`.
-
-To install them simply run in a terminal:
-
-```bash
-make venv
-```
-
-#### 3. Prepare a base ROM
-
-Copy your ROM to inside `baseroms/` in the version folder corresponding to your ROM's version, and rename the file of the baserom to `baserom.z64`. ex: `baseroms/jp/baserom.z64`
-
-#### 4. Make and Build the ROM
-
-To start the extraction/build process, run the following command:
-
-```bash
-make setup
-make extract
-make
-make compress
-```
-
-## Note about licensing
-
-The contents of the `src` and `include` folders are, as far as possible, licensed under CC0.
-
-Other folders and files in the repository are CC0 unless they specify another license.
-
-The licensing of this repository does not cover subrepos, namely:
-
-* `tools/asm-differ`
-* `tools/asm-processor`
-* `tools/fado`
-* `lib/ultralib`
-* `tools/z64compress`
+#### Helping out
+I am currently working on this solo, but if you want to help out you can reach me in the [Animal Crossing Modding Discord](https://discord.gg/dRWBVdjYGK)! If you are technically minded and/or have experience decompiling, your help would be most welcome!
