@@ -15,8 +15,6 @@ import struct
 import sys
 from pathlib import Path
 
-ITEM_NAME_LEN = 16
-
 # AF text format
 AF_CHAR_MAP = {
     0x00: 'あ', 0x01: 'い', 0x02: 'う', 0x03: 'え', 0x04: 'お',
@@ -188,6 +186,17 @@ AC_TO_AF = {
     if opcode in AF_CODES_BY_OPCODE
 }
 
+ITEM_NAME_LEN = 16
+ITEM_VANILLA_LEN = 10
+ITEM_BANK_HEADER = 0x08
+ITEM_VANILLA_CATEGORIES = (  # (vanilla offset, entry count), in bank order
+    (0x0008, 64), (0x0288, 4), (0x02B0, 36), (0x0418, 32), (0x0558, 255), (0x0F50, 30),
+    (0x107C, 64), (0x12FC, 64), (0x157C, 7), (0x15C4, 10), (0x1628, 55), (0x1850, 1),
+    (0x185C, 96), (0x1C1C, 32), (0x1D5C, 2), (0x1D70, 4),
+    (0x1D98, 3789),  # furniture
+)
+ITEM_BANK_ENTRIES = sum(count for _, count in ITEM_VANILLA_CATEGORIES)
+
 TAG_RE = re.compile(r'<<([A-Za-z0-9_\[\]+]+)((?:\s*\[[^\]]*\])?)>>')
 HEX_ARG_RE = re.compile(r'\[([0-9A-Fa-f ]+)\]')
 
@@ -235,7 +244,7 @@ AF_BANKS = {
     "ps_data":      (0x00D13000, 0x00D15000, None, None, None, None),
     "string_data":  (0x00D16000, 0x00D18000, None, None, None, None),
     "npc_name_str": (0x00E04000, None, None, 0x06, 0x08, 0xFF),
-    "item_1xxx":    (0x010F4000, None, None, ITEM_NAME_LEN, 0x08, 0x11C3),
+    "item_1xxx":    (0x010F4000, None, None, ITEM_NAME_LEN, ITEM_BANK_HEADER, ITEM_BANK_ENTRIES),
 }
 AF_CARRIERS = {
     "dialogue": {"segment": "softsprite_matrix_static", "codeword": 0x01913000,
@@ -621,6 +630,20 @@ def resolve_text(row: dict, ac_data: dict[str, tuple]) -> str:
         return text[1:] if text.startswith("'") else text
     raise ValueError(f"unsupported text_fix {fix!r} in {row.get('af_bank', '')}[{row.get('af_index', '')}]")
 
+def build_item_bank(vanilla: bytes) -> bytearray:
+    """Re-lay the vanilla item bank out as a flat grid of ITEM_NAME_LEN-byte entries."""
+    bank = bytearray(b" " * (ITEM_BANK_HEADER + ITEM_BANK_ENTRIES * ITEM_NAME_LEN))
+    bank[:ITEM_BANK_HEADER] = vanilla[:ITEM_BANK_HEADER]
+    af_index = 0
+    for base, count in ITEM_VANILLA_CATEGORIES:
+        for local in range(count):
+            old = base + local * ITEM_VANILLA_LEN
+            new = ITEM_BANK_HEADER + af_index * ITEM_NAME_LEN
+            bank[new:new + ITEM_VANILLA_LEN] = vanilla[old:old + ITEM_VANILLA_LEN]
+            af_index += 1
+    return bank
+
+
 def af_process_bank(name: str, assets_dir: Path, rows: list[dict], ac_data: dict[str, tuple]):
     data_codeword, table_codeword, carrier, entry_size, skip_bytes, count = AF_BANKS[name]
     data_path = assets_dir / f"{segname(data_codeword)}.bin"
@@ -712,7 +735,7 @@ def af_process_bank(name: str, assets_dir: Path, rows: list[dict], ac_data: dict
         print(f"new data size: {len(new_data)} bytes (was {len(original_data)})")
         return {"new_data": new_data, "table_path": table_path, "new_table": new_table}
 
-    new_data = bytearray(data_path.read_bytes())
+    new_data = build_item_bank(data_path.read_bytes()) if name == "item_1xxx" else bytearray(data_path.read_bytes())
     print(f"\n=== {name} === (fixed-width, {count} entries, {entry_size} bytes each)")
     n_ok = n_skip = 0
     for row in rows:

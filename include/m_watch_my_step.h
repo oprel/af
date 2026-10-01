@@ -33,8 +33,6 @@ typedef struct navigate_s {
     u8 draw_type;
 } mWt_navigate_c;
 
-static mWt_navigate_c S_navigate;
-
 typedef struct mybell_confirmation_s {
     f32 opacity;
     u32 all_money;

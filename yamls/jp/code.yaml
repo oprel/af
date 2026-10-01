@@ -46,7 +46,7 @@
       - [0x6B8880, asm, code/m_house]
       - [0x6B8A70, c, code/m_land]
       - [0x6B8F20, asm, code/6B8F20]
-      - [0x6BA3B0, asm, code/m_item_name]
+      - [0x6BA3B0, c, code/m_item_name]
       - [0x6BA500, asm, code/6BA500]
       - [0x6BA930, c, code/m_kankyo]
       - [0x6BD560, c, code/m_lib]
@@ -245,7 +245,7 @@
       - [0x73AC50, rodata, code/73AC50]
       - [0x73AC60, rodata, code/73AC60]
       - [0x73AD40, rodata, code/73AD40]
-      - [0x73AD50, rodata, code/73AD50]
+      - [0x73AD50, .rodata, code/m_item_name]
       - [0x73AD70, rodata, code/73AD70]
       - [0x73AD90, .rodata, code/m_kankyo]
       - [0x73AED0, .rodata, code/m_lib]
@@ -330,6 +330,7 @@
       - { start: 0x73F4D0, type: .bss, vram: 0x80144660, name: code/m_room_type }
       - { start: 0x73F4D0, type: .bss, vram: 0x80144670, name: code/m_submenu }
       - { start: 0x73F4D0, type: bss, vram: 0x80144690, name: code/80144690 }
+      - { start: 0x73F4D0, type: .bss, vram: 0x801446A0, name: code/m_watch_my_step }
       - { start: 0x73F4D0, type: .bss, vram: 0x801446E0, name: code/sFRm_flashrom }
       - { start: 0x73F4D0, type: .bss, vram: 0x80144D20, name: code/audioMgr }
       - { start: 0x73F4D0, type: .bss, vram: 0x80144FC0, name: code/cfbinfo }

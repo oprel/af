@@ -35,7 +35,9 @@ typedef struct Camera2{
     /* 0x00C */ xyz_t unk4; 
     /* 0x018 */ UNK_TYPE1 unk18[0x48];
     /* 0x060 */ s32 now_main_index;
-    /* 0x0D4 */ UNK_TYPE1 unk64[0xD4];
+                UNK_TYPE1 unk64[0x20];
+    /* 0x084 */ s32 unk84;
+    /* 0x088 */ UNK_TYPE1 unk88[0xB0];
 } Camera2; //size = 0x138
 
 // void func_8005F390_jp();
