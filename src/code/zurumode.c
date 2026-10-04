@@ -17,6 +17,8 @@ s32 zerucheck_init(zuruKeycheck* keycheck) {
     keycheck->state = 0;
     keycheck->progressing = 0;
     keycheck->lastController = 0;
+    //TEMPORARY TESTING
+    zurumode_flag = 2;
 }
 
 s32 zerucheck_key_check(zuruKeycheck* keycheck, u16 controller) {

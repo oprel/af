@@ -237,9 +237,9 @@
     compress: True
     bss_size: 0x120
     subsegments:
-      - [0x777AE0, asm, overlays/submenu/tag_ovl/m_tag_ovl]
+      - [0x777AE0, c, overlays/submenu/tag_ovl/m_tag_ovl]
       - [0x7810F0, data, overlays/submenu/tag_ovl/m_tag_ovl]
-      - [0x781CC0, rodata, overlays/submenu/tag_ovl/m_tag_ovl]
+      - [0x781CC0, .rodata, overlays/submenu/tag_ovl/m_tag_ovl]
       - { start: 0x781D60, type: bss, vram: 0x80879590, name: overlays/submenu/tag_ovl/m_tag_ovl }
   - name: tag_ovl_reloc
     type: code

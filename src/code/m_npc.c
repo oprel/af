@@ -2983,13 +2983,15 @@ void mNpc_SetNpcNameID(Animal_c* animal, s32 count) {
     }
 }
 
+extern u8 D_E04000[];
+
 void mNpc_LoadNpcNameString(char* name, u8 npcId) {
     char npcName[ANIMAL_NAME_LEN];
     s32 offset;
 
     if (npcId < 0xFF) {
         offset = npcId * ANIMAL_NAME_LEN;
-        DmaMgr_RequestSyncDebug(npcName, (offset + 8) + SEGMENT_ROM_START(segment_00E04000), 8, "../m_npc.c", 0x1916);
+        DmaMgr_RequestSyncDebug(npcName, (offset + 8) + (RomOffset)D_E04000, 8, "../m_npc.c", 0x1916);
         mem_copy((u8*)name, (u8*)npcName, ANIMAL_NAME_LEN);
     }
 }

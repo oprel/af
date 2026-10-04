@@ -195,7 +195,12 @@ ITEM_VANILLA_CATEGORIES = (  # (vanilla offset, entry count), in bank order
     (0x185C, 96), (0x1C1C, 32), (0x1D5C, 2), (0x1D70, 4),
     (0x1D98, 3789),  # furniture
 )
-ITEM_BANK_ENTRIES = sum(count for _, count in ITEM_VANILLA_CATEGORIES)
+
+def item_slot(vanilla_offset: int) -> int:
+    """Flat slot of a vanilla item offset (mirrors ITEM_BASE_IDX in m_item_name.c)."""
+    return (vanilla_offset - ITEM_BANK_HEADER + ITEM_VANILLA_LEN // 2) // ITEM_VANILLA_LEN
+
+ITEM_BANK_ENTRIES = item_slot(ITEM_VANILLA_CATEGORIES[-1][0]) + ITEM_VANILLA_CATEGORIES[-1][1]
 
 TAG_RE = re.compile(r'<<([A-Za-z0-9_\[\]+]+)((?:\s*\[[^\]]*\])?)>>')
 HEX_ARG_RE = re.compile(r'\[([0-9A-Fa-f ]+)\]')
@@ -631,16 +636,14 @@ def resolve_text(row: dict, ac_data: dict[str, tuple]) -> str:
     raise ValueError(f"unsupported text_fix {fix!r} in {row.get('af_bank', '')}[{row.get('af_index', '')}]")
 
 def build_item_bank(vanilla: bytes) -> bytearray:
-    """Re-lay the vanilla item bank out as a flat grid of ITEM_NAME_LEN-byte entries."""
+    """Re-lay the vanilla item bank out as a flat grid of ITEM_NAME_LEN-byte entries, indexed by af_index."""
     bank = bytearray(b" " * (ITEM_BANK_HEADER + ITEM_BANK_ENTRIES * ITEM_NAME_LEN))
     bank[:ITEM_BANK_HEADER] = vanilla[:ITEM_BANK_HEADER]
-    af_index = 0
     for base, count in ITEM_VANILLA_CATEGORIES:
         for local in range(count):
             old = base + local * ITEM_VANILLA_LEN
-            new = ITEM_BANK_HEADER + af_index * ITEM_NAME_LEN
+            new = ITEM_BANK_HEADER + (item_slot(base) + local) * ITEM_NAME_LEN
             bank[new:new + ITEM_VANILLA_LEN] = vanilla[old:old + ITEM_VANILLA_LEN]
-            af_index += 1
     return bank
 
 

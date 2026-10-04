@@ -11,21 +11,17 @@
 #define ITEM_HEADER_LEN 8
 #define ITEM_VANILLA_LEN 10
 
-// translation_injector.py keeps the vanilla layout (header, categories, padding) but with
-// ITEM_NAME_LEN sized entries. The index of the first entry of a category is
-// (vanilla base - header) / ITEM_VANILLA_LEN, so moving a vanilla base to the new layout
-// means adding ITEM_NAME_LEN - ITEM_VANILLA_LEN bytes for every entry before it. For
-// ITEM_NAME_LEN == ITEM_VANILLA_LEN the base does not move.
-// This is written as idx * LEN - idx * VANILLA_LEN (and not idx * (LEN - VANILLA_LEN)) on
-// purpose: it gives the same value, but for ITEM_NAME_LEN == ITEM_VANILLA_LEN the compiler
-// does not fold it away, so the function is the same size for every ITEM_NAME_LEN.
-#define ITEM_BASE_IDX(base) (((base) - ITEM_NAME_SEG - ITEM_HEADER_LEN) / ITEM_VANILLA_LEN)
-#define ITEM_REBASE(base) ((base) + ITEM_BASE_IDX(base) * ITEM_NAME_LEN - ITEM_BASE_IDX(base) * ITEM_VANILLA_LEN)
+// translation_injector.py lays the translated bank out as a flat grid of ITEM_NAME_LEN sized
+// slots, indexed by af_index: slot n is at ITEM_HEADER_LEN + n * ITEM_NAME_LEN. A category
+// starts at the slot nearest to its vanilla position, (base - header) / ITEM_VANILLA_LEN rounded.
+#define ITEM_BASE_IDX(base) (((base) - ITEM_NAME_SEG - ITEM_HEADER_LEN + ITEM_VANILLA_LEN / 2) / ITEM_VANILLA_LEN)
 
 #if ITEM_NAME_LEN == ITEM_VANILLA_LEN
+#define ITEM_REBASE(base) (base)
 #define ITEM_NAME_BUF(n) u8 n[ITEM_NAME_LEN]
 #define ITEM_NAME_PTR(n) (n)
 #else
+#define ITEM_REBASE(base) (ITEM_NAME_SEG + ITEM_HEADER_LEN + ITEM_BASE_IDX(base) * ITEM_NAME_LEN)
 #define ITEM_NAME_BUF(n) union { u8 b[ITEM_NAME_LEN]; f64 align; } n
 #define ITEM_NAME_PTR(n) ((n).b)
 #endif
@@ -77,14 +73,8 @@ void mIN_copy_name_str(char* buf, u32 item) {
 }
 
 //here for padding to match the original size? why is this needed?
-void mIN_copy_name_str_pad0(void) {
-}
- 
-void mIN_copy_name_str_pad1(void) {
-}
- 
-void mIN_copy_name_str_pad2(void) {
-}
- 
-void mIN_copy_name_str_pad3(void) {
-}
+void mIN_copy_name_str_pad0(void) {}
+void mIN_copy_name_str_pad1(void) {}
+void mIN_copy_name_str_pad2(void) {}
+void mIN_copy_name_str_pad3(void) {}
+void mIN_copy_name_str_pad4(void) {}
