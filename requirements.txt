@@ -5,3 +5,6 @@ libyaz0
 
 ipl3checksum>=1.2.0,<2.0.0
 spimdisasm>=1.36.0,<2.0.0
+
+Pillow
+numpy

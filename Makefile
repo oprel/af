@@ -140,6 +140,8 @@ PIGMENT         := tools/pigment64/pigment64
 
 TEXT_INJECTOR	:= $(PYTHON) translation_injector.py
 FONT_INJECTOR	:= $(PYTHON) font_injector.py
+IMAGE_INJECTOR	:= $(PYTHON) image_injector.py
+
 
 
 IINC := -Iinclude -Isrc -Iassets/$(VERSION) -I. -I$(BUILD_DIR)
@@ -298,6 +300,7 @@ setup:
 inject:
 	$(TEXT_INJECTOR) link_sheet.csv baseroms/ac/ .
 	$(FONT_INJECTOR) .
+	$(IMAGE_INJECTOR) .
 
 extract:
 	$(RM) -r asm/$(VERSION) assets/$(VERSION)
