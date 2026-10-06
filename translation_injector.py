@@ -186,9 +186,6 @@ AC_TO_AF = {
     if opcode in AF_CODES_BY_OPCODE
 }
 
-ITEM_NAME_LEN = 16
-ITEM_VANILLA_LEN = 10
-ITEM_BANK_HEADER = 0x08
 ITEM_VANILLA_CATEGORIES = (  # (vanilla offset, entry count), in bank order
     (0x0008, 64), (0x0288, 4), (0x02B0, 36), (0x0418, 32), (0x0558, 255), (0x0F50, 30),
     (0x107C, 64), (0x12FC, 64), (0x157C, 7), (0x15C4, 10), (0x1628, 55), (0x1850, 1),
@@ -240,6 +237,15 @@ AC_REL_FILE = "foresta.rel.szs"
 AC_REL_SECTION = 0x05
 AC_REL_ENTRY_SIZE = 0x10
 
+NPC_NAME_LEN = 8 # must match ANIMAL_NAME_LEN in include/m_npc.h
+NPC_VANILLA_LEN = 6
+NPC_BANK_HEADER = 0x08
+NPC_BANK_ENTRIES = 0xFF
+
+ITEM_NAME_LEN = 16
+ITEM_VANILLA_LEN = 10
+ITEM_BANK_HEADER = 0x08
+
 # AF banks: (data codeword, table codeword, carrier or None, entry size, skip bytes, count)
 AF_BANKS = {
     "message_data": (0x00BD4000, 0x00CF9000, "dialogue", None, None, None),
@@ -248,7 +254,7 @@ AF_BANKS = {
     "super_data":   (0x00D11000, 0x00D12000, None, None, None, None),
     "ps_data":      (0x00D13000, 0x00D15000, None, None, None, None),
     "string_data":  (0x00D16000, 0x00D18000, None, None, None, None),
-    "npc_name_str": (0x00E04000, None, None, 0x06, 0x08, 0xFF),
+    "npc_name_str": (0x00E04000, None, None, NPC_NAME_LEN, NPC_BANK_HEADER, NPC_BANK_ENTRIES),
     "item_1xxx":    (0x010F4000, None, None, ITEM_NAME_LEN, ITEM_BANK_HEADER, ITEM_BANK_ENTRIES),
 }
 AF_CARRIERS = {
@@ -647,6 +653,19 @@ def build_item_bank(vanilla: bytes) -> bytearray:
     return bank
 
 
+def build_npc_bank(vanilla: bytes) -> bytearray:
+    """Re-lay the vanilla NPC name bank out as a flat grid of NPC_NAME_LEN-byte entries."""
+    bank = bytearray(b" " * (NPC_BANK_HEADER + NPC_BANK_ENTRIES * NPC_NAME_LEN))
+    bank[:NPC_BANK_HEADER] = vanilla[:NPC_BANK_HEADER]
+    for i in range(NPC_BANK_ENTRIES):
+        old = NPC_BANK_HEADER + i * NPC_VANILLA_LEN
+        if old + NPC_VANILLA_LEN > len(vanilla):
+            break
+        new = NPC_BANK_HEADER + i * NPC_NAME_LEN
+        bank[new:new + NPC_VANILLA_LEN] = vanilla[old:old + NPC_VANILLA_LEN]
+    return bank
+
+
 def af_process_bank(name: str, assets_dir: Path, rows: list[dict], ac_data: dict[str, tuple]):
     data_codeword, table_codeword, carrier, entry_size, skip_bytes, count = AF_BANKS[name]
     data_path = assets_dir / f"{segname(data_codeword)}.bin"
@@ -738,7 +757,12 @@ def af_process_bank(name: str, assets_dir: Path, rows: list[dict], ac_data: dict
         print(f"new data size: {len(new_data)} bytes (was {len(original_data)})")
         return {"new_data": new_data, "table_path": table_path, "new_table": new_table}
 
-    new_data = build_item_bank(data_path.read_bytes()) if name == "item_1xxx" else bytearray(data_path.read_bytes())
+    if name == "item_1xxx":
+        new_data = build_item_bank(data_path.read_bytes())
+    elif name == "npc_name_str":
+        new_data = build_npc_bank(data_path.read_bytes())
+    else:
+        new_data = bytearray(data_path.read_bytes())
     print(f"\n=== {name} === (fixed-width, {count} entries, {entry_size} bytes each)")
     n_ok = n_skip = 0
     for row in rows:

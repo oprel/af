@@ -39,6 +39,18 @@ typedef enum mTG_QstrType {
     /* 9 */ mTG_QSTR_TYPE_OMIKUJI
 } mTG_QstrType;
 
+typedef struct mTG_word_s {
+    u8 str[8];
+    void (*proc)();
+} mTG_word_c;
+
+typedef struct mTG_table_s {
+    s16 col_num;
+    s16 row_num;
+    const s16* col_pos;
+    const s16* row_pos;
+} mTG_table_c;
+
 // size = 0x54
 typedef struct mTG_tag_c {
     /* 0x00 */ u8 type;
@@ -84,4 +96,52 @@ void mTG_tag_ovl_destruct(struct Submenu* submenu);
 
 void func_8086FD3C_jp(struct Submenu* submenu);
 
+extern void func_80871ECC_jp();
+extern void func_80871F74_jp();
+extern void func_8087207C_jp();
+extern void func_80872118_jp();
+extern void func_80872580_jp();
+extern void func_808725C8_jp();
+extern void func_80872684_jp();
+extern void func_808726B0_jp();
+extern void func_80872748_jp();
+extern void func_808727E0_jp();
+extern void func_8087287C_jp();
+extern void func_80872A34_jp();
+extern void func_80872B54_jp();
+extern void func_80872DEC_jp();
+extern void func_80872E60_jp();
+extern void func_80872E84_jp();
+extern void func_808731EC_jp();
+extern void func_80873278_jp();
+extern void func_80873348_jp();
+extern void func_80873428_jp();
+extern void func_8087344C_jp();
+extern void func_80873498_jp();
+extern void func_80873510_jp();
+extern void func_80873694_jp();
+extern void func_808736B8_jp();
+extern void func_808736DC_jp();
+extern void func_80873700_jp();
+extern void func_80873724_jp();
+extern void func_808737F4_jp();
+extern void func_808738C8_jp();
+extern void func_808739B0_jp();
+extern void func_80873C88_jp();
+extern void func_80873F38_jp();
+extern void func_808757C4_jp();
+extern void func_80875888_jp();
+extern void func_808759C8_jp();
+extern void func_80875A84_jp();
+extern void func_80875AB8_jp();
+extern void func_80875AD0_jp();
+extern void func_80875B60_jp();
+extern void func_80875B88_jp();
+extern void func_80875BF4_jp();
+extern void func_80875C60_jp();
+extern void func_80875CF0_jp();
+extern void func_80875D38_jp();
+extern void func_80875DB0_jp();
+extern void func_80875E20_jp();
+ 
 #endif
