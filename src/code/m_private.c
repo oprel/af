@@ -1111,7 +1111,7 @@ void mPr_SendMailFromMother() {
 void mPr_GetForeingerAnimalMail(Mail_c* mail, PrivateInfo* priv, PrivateAnimalMemory* animalMemory) {
     AnmPersonalID_c pid;
     s32 mailNumber;
-    char npcName[6];
+    char npcName[ANIMAL_NAME_LEN];
     u8 header[20];
     u8 footer[26];
     s32 mailfct;

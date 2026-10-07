@@ -41,7 +41,7 @@ void aNP_set_talk_info(Actor* thisx) {
     char villagerName[8];
 
     mNpc_GetAnimalPlateName(villagerName, thisx->world.pos);
-    mMsg_Set_free_str(mMsg_Get_base_window_p(), 0, villagerName, 6);
+    mMsg_Set_free_str(mMsg_Get_base_window_p(), 0, villagerName, ANIMAL_NAME_LEN);
     mDemo_Set_msg_num(0x1369);
     mDemo_Set_talk_display_name(0);
     mDemo_Set_ListenAble();

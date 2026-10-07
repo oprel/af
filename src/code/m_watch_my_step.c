@@ -46,7 +46,7 @@ extern Gfx D_400B458[];
 extern u16 func_800B5C60_jp(void);
 
 extern s32 mPr_GetPossessionItemSumWithCond(PrivateInfo* priv, u16 item, u32 cond);
-extern void func_80090E98_jp(Game_Play* play, u8* str, s32 len, f32 x, f32 y,
+extern void mFont_SetLineStrings(Game_Play* play, u8* str, s32 len, f32 x, f32 y,
                               s32 r, s32 g, s32 b, s32 a, s32 unk1, s32 unk2,
                               f32 scaleX, f32 scaleY, s32 mode);
 
@@ -315,7 +315,7 @@ void func_800CD194_jp(Game_Play* play) {
     
         bell_str[i] = '\0';
     
-        func_80090E98_jp(play, bell_str, 6, 214.0f, 48.0f,
+        mFont_SetLineStrings(play, bell_str, 6, 214.0f, 48.0f,
                          255, 245, 0, (s32)(a), 0, 0,
                          0.75f, 0.75f, 1);
     }
@@ -430,7 +430,7 @@ void watch_my_step_draw(Game_Play* play) {
         f32 text_opacity = (S_watch_my_step.opacity - 0.5f) * 2.0f;
 
         if (text_opacity > 0.0f) {
-            func_80090E98_jp(
+            mFont_SetLineStrings(
                 play, S_watch_my_step.item_name, ITEM_NAME_LEN,
                 (S_watch_my_step.pos_x + 107.0f) +
                     (1.0f - S_watch_my_step.scale) * 43.0f,

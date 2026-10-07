@@ -45,7 +45,8 @@ SpecialNpcData l_sp_actor_name[] = {
     { 0xA00D, NPC_SEX_MALE, 0x04E2, 2 },   { 0xA00E, NPC_SEX_MALE, 0x04E2, 2 },   { 0xA00F, NPC_SEX_MALE, 0x04E2, 2 },
     { 0xA010, NPC_SEX_MALE, 0x04E2, 2 },
 };
-char l_no_name_npc_name[ANIMAL_NAME_LEN] = { 0xD4, 0x8E, 0xA6, 0x90, 0x85, 0x42 };
+char l_no_name_npc_name[ANIMAL_NAME_LEN] = { 0xD4, 0x8E, 0xA6, 0x90, 0x85, 0x42, 0x20, 0x20 };
+// char l_no_name_npc_name[6] = { 0xD4, 0x8E, 0xA6, 0x90, 0x85, 0x42 };
 char l_no_ending_npc_ending[ANIMAL_CATCHPHRASE_LEN] = { 0xD3, 0xAF, 0x9D, 0x20 };
 
 s32 fake_table[60];
@@ -2996,9 +2997,11 @@ void mNpc_LoadNpcNameString(char* name, u8 npcId) {
     }
 }
 
+void mNpc_padding0(){}
+
 void mNpc_GetNpcWorldNameTableNo(char* name, u16 npcId) {
     char* worldName = l_no_name_npc_name;
-    char npcName[PLAYER_NAME_LEN];
+    char npcName[ANIMAL_NAME_LEN];
 
     if (name != NULL) {
         u8 id = npcId & 0xFF;
@@ -3008,12 +3011,13 @@ void mNpc_GetNpcWorldNameTableNo(char* name, u16 npcId) {
             worldName = npcName;
         }
     }
-    mPr_CopyPlayerName(name, worldName);
+    mIN_Copy8(name, worldName);
+    //mPr_CopyPlayerName(name, worldName);
 }
 
 void mNpc_GetNpcWorldNameAnm(char* name, AnmPersonalID_c* anmId) {
     char* worldName = l_no_name_npc_name;
-    char npcName[PLAYER_NAME_LEN];
+    char npcName[ANIMAL_NAME_LEN];
 
     if (anmId != NULL) {
         if (ACTOR_FGNAME_GET_F000(anmId->npcId) == FGNAME_F000_E) {
@@ -3021,7 +3025,8 @@ void mNpc_GetNpcWorldNameAnm(char* name, AnmPersonalID_c* anmId) {
             worldName = npcName;
         }
     }
-    mPr_CopyPlayerName(name, worldName);
+    mIN_Copy8(name, worldName);
+    //mPr_CopyPlayerName(name, worldName);
 }
 
 void mNpc_GetNpcWorldNameP(char* name, u16 npcId) {
@@ -3031,18 +3036,19 @@ void mNpc_GetNpcWorldNameP(char* name, u16 npcId) {
 
     for (i = 0; i < ARRAY_COUNT(l_sp_actor_name); i++) {
         if (npcId == sp->specialNpcId) {
-            mString_Load_StringFromRom(load_name, PLAYER_NAME_LEN, sp->nameStringNumber);
+            mString_Load_StringFromRom(load_name, ANIMAL_NAME_LEN, sp->nameStringNumber);
             worldName = load_name;
             break;
         }
         sp++;
     }
-    mPr_CopyPlayerName(name, worldName);
+    mIN_Copy8(name, worldName);
+    //mPr_CopyPlayerName(name, worldName);
 }
 
 void mNpc_GetNpcWorldName(char* name, Npc* npc) {
     char* worldName = l_no_name_npc_name;
-    char npcName[PLAYER_NAME_LEN];
+    char npcName[ANIMAL_NAME_LEN];
 
     if ((name != NULL) && (npc != NULL)) {
         if (npc->actor.part == ACTOR_PART_NPC) {
@@ -3056,7 +3062,8 @@ void mNpc_GetNpcWorldName(char* name, Npc* npc) {
         }
         worldName = npcName;
     }
-    mPr_CopyPlayerName(name, worldName);
+    //mPr_CopyPlayerName(name, worldName);
+    mIN_Copy8(name, worldName);
 }
 
 void mNpc_GetRandomAnimalName(char* dst) {

@@ -890,7 +890,7 @@ void func_8086FD3C_jp(Submenu* submenu) {
 extern u8 D_808794DC_jp[5];
 extern u8 D_808794D8_jp[];
 
-extern f32 func_80090E98_jp(Game*,u8*,s32,f32,f32,s32,s32,s32,s32,s32,s32,f32,f32,s32);
+extern f32 mFont_SetLineStrings(Game*,u8*,s32,f32,f32,s32,s32,s32,s32,s32,s32,f32,f32,s32);
 typedef void (*SetCharMatrixProc)(void*);
 
 //mTG_set_character_item
@@ -914,7 +914,7 @@ void func_808782A4_jp(Submenu* submenu, Game* game, void* graph, mTG_tag_c* tag,
     pos_y = 120.0f - (tag->basePos[1] + yOfs + scale_rate * (tag->bodyOfs[1] + tag->textOfs[1]));
 
     ((mTG_SetCharMatrixView*)((u8*)submenu->unk_2C + 0x10000))->set_char_matrix_proc(graph);
-    func_80090E98_jp(game, tag->str0, TAG_ITEM_STR_LEN, pos_x, pos_y, color_p[0], color_p[1], color_p[2], 255, 0, 0, scale_rate, scale_rate, 0);
+    mFont_SetLineStrings(game, tag->str0, TAG_ITEM_STR_LEN, pos_x, pos_y, color_p[0], color_p[1], color_p[2], 255, 0, 0, scale_rate, scale_rate, 0);
 }
 
 //void mTG_pad0(void) {}

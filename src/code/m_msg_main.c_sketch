@@ -397,7 +397,7 @@ s32 mMsg_Check_ContinueCode_forData(char* data, s32 idx) {
 }
 
 s32 mMsg_Check_ContinueCode(MessageWindow* window, s32 idx) {
-    return mMsg_Check_LastCode_forData(window->messageData->dataBuffer, idx);
+    return mMsg_Check_ContinueCode_forData(window->messageData->dataBuffer, idx);
 }
 
 s32 mMsg_Check_NextIndex_ContinueCode(MessageWindow* window) {
@@ -503,6 +503,7 @@ s32 mMsg_Get_SoundCutCode_forData(char* data, s32 idx) {
 
     return FALSE;
 }
+
 s32 mMsg_Get_SoundCutCode(MessageWindow* window, s32 idx) {
     return mMsg_Get_SoundCutCode_forData(window->messageData->dataBuffer, idx);
 }
@@ -536,7 +537,8 @@ void mMsg_Get_bgm_delete_forData(char* data, s32 idx, s32* bgmType, s32* stopTyp
 }
 
 void mMsg_Get_bgm_delete(MessageWindow* window, s32 idx, s32* bgmType, s32* stopTypee) {
-    mMsg_Get_bgm_make_forData(window->messageData->dataBuffer, idx, bgmType, stopTypee);
+    // FIX: was calling mMsg_Get_bgm_make_forData
+    mMsg_Get_bgm_delete_forData(window->messageData->dataBuffer, idx, bgmType, stopTypee);
 }
 
 s32 mMsg_Get_MsgTimeEnd_time_forData(char* data, s32 idx) {
@@ -613,6 +615,7 @@ void mMsg_Clear_CursolIndex(MessageWindow* window) {
 void mMsg_SetTimer(MessageWindow* window, f32 timer) {
     window->cursolTimer = timer;
 }
+
 void mMsg_Get_BodyParam(s32 idx, u32* vramp, size_t* size) {
     s32 sized;
     u32 offsetPtrs[5];
@@ -1051,11 +1054,11 @@ s32 mMsg_CopyMonth(char* data, s32 startIdx, s32 len) {
 
 s32 mMsg_CopyWeek(char* data, s32 startIdx, s32 len) {
     s32 commandLen = mFont_CodeSize_idx_get(data, startIdx);
-    char monthStr[6];
-    s32 monthLen = mString_Load_WeekStringFromRom(monthStr, common_data.time.rtcTime.weekday);
-    s32 newLen = mMsg_MoveDataCut(data, startIdx + monthLen, startIdx + commandLen, len, FALSE);
+    char weekStr[6];
+    s32 weekLen = mString_Load_WeekStringFromRom(weekStr, common_data.time.rtcTime.weekday);
+    s32 newLen = mMsg_MoveDataCut(data, startIdx + weekLen, startIdx + commandLen, len, FALSE);
 
-    mMsg_CopyString(&data[startIdx], monthStr, monthLen);
+    mMsg_CopyString(&data[startIdx], weekStr, weekLen);
 
     return newLen;
 }
@@ -1872,7 +1875,7 @@ s32 mMsg_Main_Cursol_SetDemoOrderQuest_ControlCursol(MessageWindow* window, s32*
 s32 mMsg_Main_Cursol_SetSelectWindow_ControlCursol(MessageWindow* window, s32* idxPtr) {
     *idxPtr += mMsg_Set_SizeCode(window, *idxPtr);
     window->endTextCursolIdx = *idxPtr;
-    mChoice_Change_request_main_index(&window->choiceWindow, Choice_MAIN_INDEX_APPEAR);
+    mChoice_Change_request_main_index(&window->choiceWindow, MESSAGE_MAIN_INDEX_APPEAR);
 
     return 2;
 }
@@ -2011,7 +2014,7 @@ s32 mMsg_Main_Cursol_SetSelectString3_ControlCursol(MessageWindow* window, s32* 
 }
 
 s32 mMsg_Main_Cursol_SetSelectString4_ControlCursol(MessageWindow* window, s32* idxPtr) {
-    return mMsg_Main_Cursol_SetSelectString_ControlCursol(window, idxPtr, Choice_CHOICE4);
+    return mMsg_Main_Cursol_SetSelectString_ControlCursol(window, idxPtr, Choice_CHOICE_MAX);
 }
 
 s32 mMsg_Main_Cursol_SetForceNext_ControlCursol(MessageWindow* window, s32* idxPtr) {
@@ -2424,6 +2427,7 @@ s32 mMsg_Main_Cursol_BgmDelete_ControlCursol(MessageWindow* window, s32* idxPtr)
 
     return 0;
 }
+
 s32 mMsg_Main_Cursol_MsgTimeEnd_ControlCursol(MessageWindow* window, s32* idxPtr) {
     window->endTextCursolIdx = *idxPtr;
 
@@ -2522,6 +2526,7 @@ s32 mMsg_Main_Cursol_Proc_ControlCursol(MessageWindow* window, s32* idxPtr) {
     char code = data[*idxPtr];
 
     if (code == MESSAGE_CHAR_CONTROL_CODE) {
+        // TODO: full table
         static MessageCursolProc proc[] = {
             NULL,
         };
@@ -2549,7 +2554,7 @@ s32 mMsg_Main_Cursol_ControlCursol(MessageWindow* window) {
     endTextCursol = window->endTextCursolIdx;
     idx = endTextCursol;
     cursolTimer = &window->cursolTimer;
-    choiceHidden = mChoice_check_main_index(&window->choiceWindow) == Choice_MAIN_INDEX_DISAPPEAR;
+    choiceHidden = mChoice_check_main_index(&window->choiceWindow) == MESSAGE_MAIN_INDEX_DISAPPEAR;
     res = TRUE;
 
     if (chkTrigger(B_BUTTON)) {
@@ -2686,7 +2691,8 @@ void mMsg_request_main_index_fromDisappear(MessageWindow* window, s32 scaleDownF
 }
 
 void mMsg_Main_Disappear(MessageWindow* window, Game_Play* play) {
-    s32 scaleDownFlag = mMsg_Main_Appear_SetScale(window, play);
+
+    s32 scaleDownFlag = mMsg_Main_Disappear_SetScale(window, play);
 
     mMsg_request_main_index_fromDisappear(window, scaleDownFlag);
     mMsg_MainSetup_Window(window, play);
@@ -2876,7 +2882,6 @@ void mMsg_DrawWindowTurnButton(MessageWindow* window, Game_Play* play, s32 mode)
                           window->continueButtonColor.b, window->continueButtonColor.a, FALSE, 1.0f, 1.0f, mode);
     }
 }
-;
 
 void mMsg_DrawWindowBody(MessageWindow* window, Game_Play* play, s32 mode) {
     GraphicsContext* graph = play->state.gfxCtx;
@@ -3083,8 +3088,9 @@ void mMsg_Main(Game_Play* play) {
     mMsg_Main_Window(&mMsg_window, play);
     mChoice_Main(&mMsg_window.choiceWindow, play);
 }
+
 void mMsg_Draw(Game_Play* play) {
-    mMsg_Draw_Window(&mMsg_window.choiceWindow, play);
+    mMsg_Draw_Window(&mMsg_window, play);
 }
 
 #pragma GLOBAL_ASM("asm/jp/nonmatchings/code/m_msg_main/mMsm_ClearRecord.s")

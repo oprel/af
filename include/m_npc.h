@@ -19,7 +19,8 @@
 
 #define ANIMAL_MEMORY_NUM 7
 #define ANIMAL_CATCHPHRASE_LEN 4
-#define ANIMAL_NAME_LEN PLAYER_NAME_LEN
+#define ANIMAL_NAME_LEN_VANILLA 6
+#define ANIMAL_NAME_LEN 8
 
 #define NPC_NUM 216
 
@@ -84,7 +85,7 @@ typedef struct AnmRemailFlags {
 
 typedef struct Anmremail {
     /* 0x00 */ lbRTC_ymd_t date; /* date sent */
-    /* 0x04 */ char name[ANIMAL_NAME_LEN]; /* villager name */
+    /* 0x04 */ char name[ANIMAL_NAME_LEN_VANILLA]; /* villager name */
     /* 0x0A */ char landName[LAND_NAME_SIZE]; /* town name */
     /* 0x10 */ AnmremailFlags flags;
 } Anmremail; // size = 0x12
@@ -124,7 +125,7 @@ typedef struct Animal_c {
     /* 0x4E9 */ char unk4E9[0x3];
     /* 0x4EC */ QuestContest contestQuest;
     /* 0x4E9 */ char previousLandName[LAND_NAME_SIZE];
-    /* 0x4E9 */ char parentName[ANIMAL_NAME_LEN]; 
+    /* 0x4E9 */ char parentName[ANIMAL_NAME_LEN_VANILLA]; 
     /* 0x51C */ u16 previousLandId;
     /* 0x51E */ u8 mood;
     /* 0x51F */ u8 moodTime;

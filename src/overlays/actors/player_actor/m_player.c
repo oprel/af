@@ -2806,7 +2806,7 @@ void func_808D307C_jp(Player* player) {
     mDemo_Set_talk_display_name(0);
     mDemo_Set_camera(5);
     mDemo_Set_ListenAble();
-    func_8009E9E8_jp(player);
+    mMsg_Set_LockContinue(player);
  
     {
         Color_RGBA8 windowColor;
