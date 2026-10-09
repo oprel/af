@@ -493,12 +493,12 @@ void func_8086F764_jp(mTG_tag_c* tag, s32 win_type, s32 width, s32 height) {
 //#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/submenu/tag_ovl/m_tag_ovl/func_8086FD3C_jp.s")
 
 
-/* struct_8085E9B0 (submenu->unk_2C) isn't decompiled far enough yet, so use raw offsets at the use sites. */
+/* SubmenuOverlay (submenu->overlay) isn't decompiled far enough yet, so use raw offsets at the use sites. */
 typedef u16 (*SetCollectItemNoProc)(s32 idx, s32 pageOrder);
 
 //mTG_init_tag_data_item_win
 void func_8086FD3C_jp(Submenu* submenu) {
-    mTG_tag_c* tag = (mTG_tag_c*)(*(u8**)((u8*)submenu->unk_2C + 0x106D0) + 0x8);
+    mTG_tag_c* tag = (mTG_tag_c*)(*(u8**)((u8*)submenu->overlay + 0x106D0) + 0x8);
     u16 itemNo = 0;
     Mail_c* mail = NULL;
     s32 itemCond = mPr_ITEM_COND_NORMAL;
@@ -522,13 +522,13 @@ void func_8086FD3C_jp(Submenu* submenu) {
             break;
  
         case mTG_TABLE_HANIWA: {
-            u8* menuInfo = (u8*)submenu->unk_2C + 0x10478;
+            u8* menuInfo = (u8*)submenu->overlay + 0x10478;
             itemNo = SAVE_GET(homes)[*(s32*)(menuInfo + 0x3C)].haniwa.items[idx].item;
             break;
         }
  
         case mTG_TABLE_COLLECT: {
-            u8* inventoryOvl = *(u8**)((u8*)submenu->unk_2C + 0x106DC);
+            u8* inventoryOvl = *(u8**)((u8*)submenu->overlay + 0x106DC);
  
             itemNo = (*(SetCollectItemNoProc*)(inventoryOvl + 0x5D8))(
                 idx, *(u8*)(inventoryOvl + 0x3EE));
@@ -643,7 +643,7 @@ void func_8086FD3C_jp(Submenu* submenu) {
             tag->bodyOfs[0] *= -1.0f;
         }
  
-        *(s16*)(*(u8**)((u8*)submenu->unk_2C + 0x106D0) + 0x11C) = func_8086F644_jp(tag);
+        *(s16*)(*(u8**)((u8*)submenu->overlay + 0x106D0) + 0x11C) = func_8086F644_jp(tag);
     } else if (tag->table == mTG_TABLE_CATALOG_WC) {
         /* Catalog category label (Furniture, Wallpaper, ...) */
         mem_copy(tag->str0, D_80879148_jp[idx], 6);
@@ -652,7 +652,7 @@ void func_8086FD3C_jp(Submenu* submenu) {
         tag->bodyOfs[0] *= -1.0f;
         tag->arrowDir = 2;
         tag->basePos[0] += -10.0f;
-        *(s16*)(*(u8**)((u8*)submenu->unk_2C + 0x106D0) + 0x11C) = func_8086F644_jp(tag);
+        *(s16*)(*(u8**)((u8*)submenu->overlay + 0x106D0) + 0x11C) = func_8086F644_jp(tag);
     } else {
         tag->arrowDir = 0;
     }
@@ -913,7 +913,7 @@ void func_808782A4_jp(Submenu* submenu, Game* game, void* graph, mTG_tag_c* tag,
     pos_x = 160.0f + (tag->basePos[0] + xOfs + scale_rate * (tag->bodyOfs[0] + tag->textOfs[0]));
     pos_y = 120.0f - (tag->basePos[1] + yOfs + scale_rate * (tag->bodyOfs[1] + tag->textOfs[1]));
 
-    ((mTG_SetCharMatrixView*)((u8*)submenu->unk_2C + 0x10000))->set_char_matrix_proc(graph);
+    ((mTG_SetCharMatrixView*)((u8*)submenu->overlay + 0x10000))->set_char_matrix_proc(graph);
     mFont_SetLineStrings(game, tag->str0, TAG_ITEM_STR_LEN, pos_x, pos_y, color_p[0], color_p[1], color_p[2], 255, 0, 0, scale_rate, scale_rate, 0);
 }
 

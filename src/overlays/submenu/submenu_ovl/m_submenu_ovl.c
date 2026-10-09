@@ -25,13 +25,13 @@
 #include "overlays/submenu/ovl__0079B120/ovl__0079B120.h"
 #include "overlays/submenu/ovl__0079C020/ovl__0079C020.h"
 #include "overlays/submenu/ovl__0079DA50/ovl__0079DA50.h"
-#include "overlays/submenu/ovl__0078CB80/ovl__0078CB80.h"
+#include "overlays/submenu/editor_ovl/mED_editor_ovl.h"
 #include "overlays/submenu/ovl__00789B60/ovl__00789B60.h"
 #include "overlays/submenu/board_ovl/m_board_ovl.h"
 #include "overlays/submenu/ovl__00792700/ovl__00792700.h"
 #include "overlays/submenu/ovl__00794380/ovl__00794380.h"
 #include "overlays/submenu/ovl__00799580/ovl__00799580.h"
-#include "overlays/submenu/ovl__0079A290/ovl__0079A290.h"
+#include "overlays/submenu/warning_ovl/m_warning_ovl.h"
 #include "overlays/submenu/ovl__0079E430/ovl__0079E430.h"
 #include "overlays/submenu/ovl__0079F810/ovl__0079F810.h"
 #include "overlays/submenu/ovl__007A10E0/ovl__007A10E0.h"
@@ -315,7 +315,7 @@ extern u8 D_0C000240[];
 extern u8 D_0C000440[];
 extern u8 D_0C000460[];
 
-struct_8085E9B0 ovl_base;
+SubmenuOverlay ovl_base;
 
 typedef struct struct_8085DCF8 {
     /* 0x0 */ TexturePtr pal;
@@ -509,7 +509,7 @@ SubmenuProgramOverlay mSM_program_dlftbl[SUBMENU_PROGRAM_MAX] = {
     // SUBMENU_PROGRAM_9
     SUBMENU_PROGRAM(ovl__0079DA50, func_8089AB8C_jp, func_8089AC14_jp, func_8089AAE4_jp),
     // SUBMENU_PROGRAM_10
-    SUBMENU_PROGRAM(ovl__0078CB80, func_808883F8_jp, func_808884E4_jp, func_80888354_jp),
+    SUBMENU_PROGRAM(editor_ovl, mED_editor_ovl_construct, mED_editor_ovl_destruct, mED_editor_ovl_set_proc),
     // SUBMENU_PROGRAM_11
     SUBMENU_PROGRAM(ovl__00789B60, func_80882778_jp, func_80882818_jp, func_808826B8_jp),
     // SUBMENU_PROGRAM_BOARD
@@ -521,7 +521,7 @@ SubmenuProgramOverlay mSM_program_dlftbl[SUBMENU_PROGRAM_MAX] = {
     // SUBMENU_PROGRAM_15
     SUBMENU_PROGRAM(ovl__00799580, func_80896898_jp, func_80896938_jp, func_80896830_jp),
     // SUBMENU_PROGRAM_16
-    SUBMENU_PROGRAM(ovl__0079A290, func_8089730C_jp, func_80897394_jp, func_8089728C_jp),
+    SUBMENU_PROGRAM(warning_ovl, func_8089730C_jp, func_80897394_jp, func_8089728C_jp),
     // SUBMENU_PROGRAM_17
     SUBMENU_PROGRAM(ovl__0079E430, func_8089BE68_jp, func_8089BF10_jp, func_8089BCE0_jp),
     // SUBMENU_PROGRAM_18
@@ -608,9 +608,9 @@ void mSM_setup_view(Submenu* submenu, GraphicsContext* gfxCtx, s32 arg1) {
     if (arg1 != 0) {
         mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
         guOrtho(mtx, SCREEN_WIDTH * -8, SCREEN_WIDTH * 8, SCREEN_HEIGHT * -8, SCREEN_HEIGHT * 8, 1.0f, 2000.0f, 1.0f);
-        submenu->unk_2C->unk_1072C = mtx;
+        submenu->overlay->unk_1072C = mtx;
     } else {
-        mtx = submenu->unk_2C->unk_1072C;
+        mtx = submenu->overlay->unk_1072C;
     }
 
     OPEN_POLY_OPA_DISP(gfxCtx);
@@ -1164,7 +1164,7 @@ void mSM_draw_mail(GraphicsContext* arg0, f32 arg1, f32 arg2, f32 arg3, struct_f
 }
 
 void func_8085D094_jp(Submenu* submenu) {
-    struct_8085E9B0_unk_10000* sp2C = &submenu->unk_2C->unk_10000;
+    struct_8085E9B0_unk_10000* sp2C = &submenu->overlay->unk_10000;
     void* vram;
     s32 romStart;
 
@@ -1185,7 +1185,7 @@ void func_8085D094_jp(Submenu* submenu) {
 }
 
 void mSM_ovl_prog_seg(Submenu* submenu, SubmenuProgramOverlay* programOvl) {
-    struct_8085E9B0_unk_10000* temp = &submenu->unk_2C->unk_10000;
+    struct_8085E9B0_unk_10000* temp = &submenu->overlay->unk_10000;
     UNUSED s32 pad;
     void* allocatedVram;
     SubmenuProgramOverlayFunc construct;
@@ -1249,7 +1249,7 @@ void mSM_set_before_menu_proc(Submenu* submenu) {
     //! FAKE
     if (((!programId) && (!programId)) && (!programId)) {}
 
-    temp = &submenu->unk_2C->unk_10088[programId];
+    temp = &submenu->overlay->unk_10088[programId];
 
     temp->unk_14 = NULL;
 }
@@ -1263,7 +1263,7 @@ void mSM_set_new_seg(Submenu* submenu) {
 
 void mSM_set_new_start_data(Submenu* submenu) {
     SubmenuProgramId programId = submenu->programId;
-    struct_8085E9B0_unk_10088* temp_v1 = &submenu->unk_2C->unk_10088[programId];
+    struct_8085E9B0_unk_10088* temp_v1 = &submenu->overlay->unk_10088[programId];
     f32* temp_a1 = data_table_935[programId];
 
     temp_v1->unk_00 = programId;
@@ -1282,13 +1282,13 @@ void mSM_set_new_start_data(Submenu* submenu) {
 }
 
 void func_8085D43C_jp(Submenu* submenu, void** arg1, struct_func_8085D43C_jp_arg2* arg2) {
-    void* temp_a0 = submenu->unk_2C->unk_10000.unk_00;
+    void* temp_a0 = submenu->overlay->unk_10000.unk_00;
     size_t size;
 
     *arg1 = temp_a0;
     size = arg2->vromEnd - arg2->vromStart;
     DmaMgr_RequestSyncDebug(temp_a0, arg2->vromStart, size, "../m_submenu_ovl.c", 2307);
-    submenu->unk_2C->unk_10000.unk_00 = (void*)ALIGN16((uintptr_t)size + (uintptr_t)temp_a0);
+    submenu->overlay->unk_10000.unk_00 = (void*)ALIGN16((uintptr_t)size + (uintptr_t)temp_a0);
 }
 
 void mSM_move_chg_base(struct_mSM_move_chg_base_arg0* arg0, u32 arg1) {
@@ -1303,7 +1303,7 @@ void mSM_move_chg_base(struct_mSM_move_chg_base_arg0* arg0, u32 arg1) {
 
 void mSM_make_trigger_data(Submenu* submenu) {
     s32 var_a0 = (getButton() & 0xF) | getTrigger();
-    struct_8085E9B0_unk_10670* temp_v1 = &submenu->unk_2C->unk_10670;
+    struct_8085E9B0_unk_10670* temp_v1 = &submenu->overlay->unk_10670;
 
     if (gamePT->controller.moveR > 0.5f) {
         u16 temp = gamePT->controller.moveAngle + 0x2000;
@@ -1331,10 +1331,10 @@ void mSM_make_trigger_data(Submenu* submenu) {
 void mSM_save_before_func(Submenu* submenu) {
     struct_8085E9B0_unk_10088* new_var2;
     SubmenuProgramId temp_a2;
-    struct_8085E9B0* temp_v0;
+    SubmenuOverlay* temp_v0;
     struct_8085E9B0_unk_10088* temp_v1;
 
-    temp_v0 = submenu->unk_2C;
+    temp_v0 = submenu->overlay;
     temp_v1 = &temp_v0->unk_10088[submenu->programId];
 
     temp_a2 = submenu->unk_08;
@@ -1360,7 +1360,7 @@ void mSM_set_proc(Submenu* submenu) {
 }
 
 void mSM_tex_move(Submenu* submenu) {
-    struct_8085E9B0_unk_10670* temp_v0 = &submenu->unk_2C->unk_10670;
+    struct_8085E9B0_unk_10670* temp_v0 = &submenu->overlay->unk_10670;
 
     temp_v0->unk_28 += 0.707f;
     temp_v0->unk_2C += 0.707f;
@@ -1377,12 +1377,12 @@ void mSM_tex_move(Submenu* submenu) {
 #ifdef NON_EQUIVALENT
 void mSM_return_func(Submenu* submenu, struct_mSM_return_func_arg1* arg1) {
     struct_8085E9B0_unk_10088* temp_v0;
-    struct_8085E9B0* temp_v1;
+    SubmenuOverlay* temp_v1;
     struct_8085E9B0_unk_10088* othertemp;
     s32 temp_a2;
 
     temp_a2 = arg1->unk_14;
-    temp_v1 = submenu->unk_2C;
+    temp_v1 = submenu->overlay;
     temp_v0 = temp_v1->unk_10088;
 
     if (temp_a2 != 0) {
@@ -1399,12 +1399,12 @@ void mSM_return_func(Submenu* submenu, struct_mSM_return_func_arg1* arg1) {
 
         othertemp[temp_v0->unk_08].unk_14 = arg1->unk_14;
 
-        arg1->unk_2C = 0;
+        arg1->overlay = 0;
     } else {
-        struct_8085E9B0* temp_v1_2;
+        SubmenuOverlay* temp_v1_2;
         struct_8085E9B0_unk_10000* temp;
 
-        temp_v1_2 = submenu->unk_2C;
+        temp_v1_2 = submenu->overlay;
         temp = &temp_v1_2->unk_10000;
         submenu->programId = arg1->unk_08;
         if (submenu->programId == SUBMENU_PROGRAM_0) {
@@ -1416,12 +1416,12 @@ void mSM_return_func(Submenu* submenu, struct_mSM_return_func_arg1* arg1) {
             submenu->moveProcIndex = MSM_MOVE_PROC_END;
             submenu->move = (void*)none_proc1;
             submenu->unk_08 = arg1->unk_08;
-            submenu->unk_2C->unk_10670.unk_00 = (void*)none_proc1;
-            submenu->unk_2C->unk_10670.unk_04 = (void*)none_proc1;
+            submenu->overlay->unk_10670.unk_00 = (void*)none_proc1;
+            submenu->overlay->unk_10670.unk_04 = (void*)none_proc1;
         } else {
             mSM_set_before_menu_proc(submenu);
         }
-        arg1->unk_2C = 0;
+        arg1->overlay = 0;
     }
 
     arg1->unk_08 = SUBMENU_PROGRAM_0;
@@ -1486,7 +1486,7 @@ void mSM_ovl_move_End(Submenu* submenu, struct_mSM_return_func_arg1* arg1) {
 }
 
 void mSM_menu_ovl_move(Submenu* submenu) {
-    struct_8085E9B0_unk_10670* sp24 = &submenu->unk_2C->unk_10670;
+    struct_8085E9B0_unk_10670* sp24 = &submenu->overlay->unk_10670;
 
     mSM_make_trigger_data(submenu);
     if (submenu->programId != submenu->unk_08) {
@@ -1498,7 +1498,7 @@ void mSM_menu_ovl_move(Submenu* submenu) {
 
 void mSM_menu_ovl_draw(Submenu* submenu, Game_Play* game_play) {
     mSM_setup_view(submenu, game_play->state.gfxCtx, 1);
-    submenu->unk_2C->unk_10670.unk_04(submenu, game_play);
+    submenu->overlay->unk_10670.unk_04(submenu, game_play);
 }
 
 void mSM_menu_ovl_init(Submenu* submenu) {
@@ -1506,8 +1506,8 @@ void mSM_menu_ovl_init(Submenu* submenu) {
     void* func = none_proc1;
     u16 temp = 0x2000;
 
-    submenu->unk_2C = &ovl_base;
-    bzero(&ovl_base, sizeof(struct_8085E9B0));
+    submenu->overlay = &ovl_base;
+    bzero(&ovl_base, sizeof(SubmenuOverlay));
 
 //! FAKE
 label:
@@ -1527,17 +1527,17 @@ label:
     ovl_base.unk_10670.unk_14 = func;
     ovl_base.unk_10670.unk_26 = temp;
 
-    submenu->unk_2C->returnFunc = mSM_return_func;
-    submenu->unk_2C->moveMove = mSM_move_Move;
-    submenu->unk_2C->moveEnd = mSM_ovl_move_End;
-    submenu->unk_2C->moveChgBase = mSM_move_chg_base;
-    submenu->unk_2C->setCharMatrix = mSM_set_char_matrix;
-    submenu->unk_2C->cbufCopy = mSM_cbuf_copy;
-    submenu->unk_2C->setDrawMode = mSM_set_drawMode;
-    submenu->unk_2C->drawItem = mSM_draw_item;
-    submenu->unk_2C->drawMail = mSM_draw_mail;
-    submenu->unk_2C->setupView = mSM_setup_view;
-    submenu->unk_2C->unk_106CC = func_8085D43C_jp;
+    submenu->overlay->returnFunc = mSM_return_func;
+    submenu->overlay->moveMove = mSM_move_Move;
+    submenu->overlay->moveEnd = mSM_ovl_move_End;
+    submenu->overlay->moveChgBase = mSM_move_chg_base;
+    submenu->overlay->setCharMatrix = mSM_set_char_matrix;
+    submenu->overlay->cbufCopy = mSM_cbuf_copy;
+    submenu->overlay->setDrawMode = mSM_set_drawMode;
+    submenu->overlay->drawItem = mSM_draw_item;
+    submenu->overlay->drawMail = mSM_draw_mail;
+    submenu->overlay->setupView = mSM_setup_view;
+    submenu->overlay->unk_106CC = func_8085D43C_jp;
 
     mSM_set_proc(submenu);
     submenu->move = mSM_menu_ovl_move;

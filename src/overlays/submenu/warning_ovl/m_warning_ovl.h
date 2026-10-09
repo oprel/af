@@ -1,5 +1,5 @@
-#ifndef OVL__0079A290_H
-#define OVL__0079A290_H
+#ifndef warning_ovl_H
+#define warning_ovl_H
 
 #include "ultra64.h"
 #include "unk.h"

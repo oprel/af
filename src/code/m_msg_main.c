@@ -30,7 +30,7 @@ void mMsg_Set_client_actor_p(MessageWindow* window, Actor* clientActor, s32 show
         mNpc_GetNpcWorldName(name, (Npc*)clientActor);
         len = mMsg_Get_Length_String(name, ANIMAL_NAME_LEN);
         width = mFont_GetStringWidth(name, len, FALSE);
-        offsetX = ((12.0f * (f32)ANIMAL_NAME_LEN) - width) * 0.5f;
+        offsetX = ((12.0f * (f32)ANIMAL_NAME_LEN_VANILLA) - width) * 0.5f; //needs to be ANIMAL_NAME_LEN_VANILLA for proper centering
 
         window->nameplateX = 61.0f + offsetX;
         window->nameplateY = 64.0f;

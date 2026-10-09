@@ -10,7 +10,7 @@
 
 struct Game_Play;
 struct Submenu;
-struct struct_8085E9B0;
+struct SubmenuOverlay;
 
 typedef enum mSMMoveProcIndex {
     /* 0 */ MSM_MOVE_PROC_WAIT,
@@ -81,7 +81,7 @@ typedef struct Submenu {
     /* 0x20 */ s32 unk_20;
     /* 0x24 */ void* linkedAllocStart;
     /* 0x28 */ void* linkedAllocEnd;
-    /* 0x2C */ struct struct_8085E9B0* unk_2C;
+    /* 0x2C */ struct SubmenuOverlay* overlay;
     /* 0x30 */ SubmenuMoveFunc move;
     /* 0x34 */ SubmenuDrawFunc draw;
     /* 0x38 */ Mail_c mail;

@@ -232,7 +232,7 @@ uintptr_t func_800C497C_jp(uintptr_t address, UNUSED void* param) {
 
 void mSM_submenu_ovlptr_init(Game_Play* game_play) {
     size_t temp6 = ALIGN64(SEGMENT_VRAM_SIZE(ovl__00792700));
-    size_t temp7 = ALIGN64(SEGMENT_VRAM_SIZE(ovl__0079A290));
+    size_t temp7 = ALIGN64(SEGMENT_VRAM_SIZE(warning_ovl));
     size_t temp8 = ALIGN64(SEGMENT_VRAM_SIZE(ovl__0079E430));
     size_t temp9 = ALIGN64(SEGMENT_VRAM_SIZE(ovl__0079F810));
     size_t submenuOvlSize = ALIGN64(SEGMENT_VRAM_SIZE(submenu_ovl));
@@ -253,7 +253,7 @@ void mSM_submenu_ovlptr_init(Game_Play* game_play) {
     temp10 = ALIGN64(SEGMENT_VRAM_SIZE(hand_ovl));
     temp1 = ALIGN64(SEGMENT_VRAM_SIZE(inventory_ovl));
     temp2 = ALIGN64(SEGMENT_VRAM_SIZE(board_ovl));
-    temp3 = ALIGN64(SEGMENT_VRAM_SIZE(ovl__0078CB80));
+    temp3 = ALIGN64(SEGMENT_VRAM_SIZE(editor_ovl));
     temp4 = ALIGN64(SEGMENT_VRAM_SIZE(ovl__00799580));
     temp5 = ALIGN64(SEGMENT_VRAM_SIZE(catalog_ovl));
 

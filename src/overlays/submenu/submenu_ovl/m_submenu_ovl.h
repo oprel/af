@@ -129,7 +129,7 @@ typedef void (*struct_8085E9B0_unk_106C4)(struct GraphicsContext*, f32, f32, f32
 typedef void (*struct_8085E9B0_unk_106C8)(struct Submenu*, struct GraphicsContext*, s32);
 typedef void (*struct_8085E9B0_unk_106CC)(struct Submenu*, void**, struct_func_8085D43C_jp_arg2*);
 
-typedef struct struct_8085E9B0 {
+typedef struct SubmenuOverlay {
     /* 0x00000 */ UNK_TYPE1 unk_00000[0x10000];
     /* 0x10000 */ struct_8085E9B0_unk_10000 unk_10000;
     /* 0x1006C */ UNK_TYPE1 unk_1006C[0x1C];
@@ -150,7 +150,7 @@ typedef struct struct_8085E9B0 {
     /* 0x106CC */ struct_8085E9B0_unk_106CC unk_106CC;
     /* 0x106D0 */ UNK_TYPE1 unk_106D0[0x5C];
     /* 0x1072C */ Mtx* unk_1072C;
-} struct_8085E9B0; // size = 0x10730
+} SubmenuOverlay; // size = 0x10730
 
 void mSM_menu_ovl_init(struct Submenu* submenu);
 
