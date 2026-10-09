@@ -6,13 +6,11 @@ This is a work-in-progress translation project for the Nintendo 64 game *Animal 
 All strings inside the text banks that have an equivalent in Animal Crossing have been [matched](https://github.com/oprel/af/blob/main/link_sheet.csv) (19,500 out of ~20,000 strings/dialogues). Some might need fixing to reflect the functionality of Animal Forest.
 
 ### To-do
-- [ ] Allow for item names up to 16 characters long.
-- [ ] Default to English character input during text input.
 - [ ] Translate lines related to the N64 Controller Pak.
-- [ ] Inject translated sprites from ZoinKity translation
 - [ ] Fix the way time/date are displayed.
-- [ ] Fix crash related to mail being longer.
+- [ ] Fix crash/save corruption related to mail being longer.
 - [ ] Locate and translate Japanese strings not present in the text banks.
+- [ ] Fix places where Animal Crossing text doesn't match Animal Forest behaviour.
 
 ### Done
 - [x] Extract English text from Animal Crossing (Gamecube).
@@ -24,6 +22,10 @@ All strings inside the text banks that have an equivalent in Animal Crossing hav
   - Misc.
 - [x] Support for longer choice strings in dialogue.
 - [x] Variable width font.
+- [x] Inject translated sprites from ZoinKity translation.
+- [x] Allow for item names up to 16 characters long.
+- [x] Allow for NPC names up to 8 characters long.
+- [x] Default to English character input during text input.
 
 
 #### Helping out
