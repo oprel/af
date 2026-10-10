@@ -289,6 +289,53 @@ s32 mChoice_Put_String_FREE(char* data, s32 idx, s32 maxSize, UNUSED Actor* acto
     return mMsg_CopyFree(mMsg_Get_base_window_p(), freeIdx, data, idx, maxSize);
 }
 
+#ifdef LONG_CHOICES
+
+#define CHOICE_CODE_FREE0 36
+#define CHOICE_CODE_FREE10 54
+
+s32 mChoice_Put_String_FREE0_9(char* data, s32 idx, s32 maxSize, Actor* actor) {
+    return mChoice_Put_String_FREE(data, idx, maxSize, actor, data[idx + 1] - CHOICE_CODE_FREE0);
+}
+
+s32 mChoice_Put_String_FREE10_14(char* data, s32 idx, s32 maxSize, Actor* actor) {
+    return mChoice_Put_String_FREE(data, idx, maxSize, actor, data[idx + 1] - CHOICE_CODE_FREE10 + 10);
+}
+
+void mChoice_SyncLongChoices_AndSetDisplay(Choice* choice) {
+    s32 i;
+    s32 j;
+
+    for (i = 0; i < choice->data.choiceNum; i++) {
+        char* scratch = (char*)choice - 0x7E + i * LONG_CHOICES;
+        char* src = choice->data.strings[i];
+        s32 len = choice->data.stringLens[i];
+
+        for (j = 0; j < Choice_CHOICE_STRING_LEN; j++) {
+            if (scratch[j] != ((j < len) ? src[j] : ' ')) {
+                break;
+            }
+        }
+
+        if (j < Choice_CHOICE_STRING_LEN) {
+            for (j = 0; j < LONG_CHOICES; j++) {
+                scratch[j] = (j < len) ? src[j] : ' ';
+            }
+        }
+    }
+
+    mChoice_Set_DisplayScaleAndDisplayPos(choice);
+}
+void mChoice_LongChoicesPad0(UNUSED Choice* choice, UNUSED Game* game) {}
+
+void mChoice_LongChoicesPad1(UNUSED Choice* choice, UNUSED Game* game) {}
+
+void mChoice_LongChoicesPad2(UNUSED Choice* choice, UNUSED Game* game) {}
+
+void mChoice_LongChoicesPad3(UNUSED Choice* choice, UNUSED Game* game) {}
+
+#else
+
 s32 mChoice_Put_String_FREE0(char* data, s32 idx, s32 maxSize, Actor* actor) {
     return mChoice_Put_String_FREE(data, idx, maxSize, actor, 0);
 }
@@ -348,6 +395,7 @@ s32 mChoice_Put_String_FREE13(char* data, s32 idx, s32 maxSize, Actor* actor) {
 s32 mChoice_Put_String_FREE14(char* data, s32 idx, s32 maxSize, Actor* actor) {
     return mChoice_Put_String_FREE(data, idx, maxSize, actor, 14);
 }
+#endif
 
 s32 mChoice_Put_String_FREE15(char* data, s32 idx, s32 maxSize, Actor* actor) {
     return mChoice_Put_String_FREE(data, idx, maxSize, actor, 15);
@@ -445,6 +493,18 @@ s32 mChoice_Put_String(char* data, s32 idx, s32 maxSize, Actor* actor) {
         &mChoice_Put_String_HOUR,
         &mChoice_Put_String_MIN,
         &mChoice_Put_String_SEC,
+#ifdef LONG_CHOICES
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+        &mChoice_Put_String_FREE0_9,
+#else
         &mChoice_Put_String_FREE0,
         &mChoice_Put_String_FREE1,
         &mChoice_Put_String_FREE2,
@@ -455,6 +515,7 @@ s32 mChoice_Put_String(char* data, s32 idx, s32 maxSize, Actor* actor) {
         &mChoice_Put_String_FREE7,
         &mChoice_Put_String_FREE8,
         &mChoice_Put_String_FREE9,
+#endif
         &mChoice_Put_String_DETERMINATION,
         &mChoice_Put_String_COUNTRY_NAME,
         &mChoice_Put_String_RAMDOM_NUMBER2,
@@ -463,11 +524,19 @@ s32 mChoice_Put_String(char* data, s32 idx, s32 maxSize, Actor* actor) {
         &mChoice_Put_String_ITEM2,
         &mChoice_Put_String_ITEM3,
         &mChoice_Put_String_ITEM4,
+#ifdef LONG_CHOICES
+        &mChoice_Put_String_FREE10_14,
+        &mChoice_Put_String_FREE10_14,
+        &mChoice_Put_String_FREE10_14,
+        &mChoice_Put_String_FREE10_14,
+        &mChoice_Put_String_FREE10_14,
+#else
         &mChoice_Put_String_FREE10,
         &mChoice_Put_String_FREE11,
         &mChoice_Put_String_FREE12,
         &mChoice_Put_String_FREE13,
         &mChoice_Put_String_FREE14,
+#endif
         &mChoice_Put_String_FREE15,
         &mChoice_Put_String_FREE16,
         &mChoice_Put_String_FREE17,
@@ -684,7 +753,11 @@ void mChoice_MainSetup_Appear(Choice* choice, UNUSED Game* game) {
     choice->timer = 0.0f;
     mChoice_Clear_ChoseNum(choice);
     mChoice_sound_SENTAKU_OPEN();
+#ifdef LONG_CHOICES
+    mChoice_SyncLongChoices_AndSetDisplay(choice);
+#else
     mChoice_Set_DisplayScaleAndDisplayPos(choice);
+#endif
 }
 
 void mChoice_determimation_set(Choice* choice) {

@@ -141,6 +141,7 @@ PIGMENT         := tools/pigment64/pigment64
 TEXT_INJECTOR	:= $(PYTHON) translation_injector.py
 FONT_INJECTOR	:= $(PYTHON) font_injector.py
 IMAGE_INJECTOR	:= $(PYTHON) image_injector.py
+TEXT_EXTRACTOR	:= $(PYTHON) text_extractor.py
 
 
 
@@ -301,6 +302,9 @@ inject:
 	$(TEXT_INJECTOR) link_sheet.csv baseroms/ac/ .
 	$(FONT_INJECTOR) .
 	$(IMAGE_INJECTOR) .
+
+text:
+	$(TEXT_EXTRACTOR) link_sheet.csv baseroms/ac/ .
 
 extract:
 	$(RM) -r asm/$(VERSION) assets/$(VERSION)

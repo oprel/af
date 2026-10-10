@@ -30,3 +30,4 @@ ctx.c.m2c
 !.vscode/c_cpp_properties.json
 
 report.json
+extracted_text.tsv

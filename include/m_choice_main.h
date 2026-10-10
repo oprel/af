@@ -86,8 +86,11 @@ typedef struct Choice {
 
     /* 0xB8 */ u8 noBFlag;      // can't press B to select last option
     /* 0xB9 */ u8 noCloseFlag;  // pressing B won't auto-cancel the choice selection?
+
+#ifdef LONG_CHOICES
     /* 0xBA */ u8 longStringSlot; //workaround for long choices
     /* 0xBB */ u8 longStringPad; //workaround for long choices
+#endif
 } Choice; // size = 0xBC
 
 
